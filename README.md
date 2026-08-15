@@ -1,4 +1,4 @@
-CholScore v1.4.0 - Full-screen sports-report Day Report + pulsing exercise days
+CholScore v1.4.1 - Fixed iOS input zoom + bigger Rewards text
 
 # CholScore v0.8.5 — Cache + Delete Hotfix
 
@@ -38,6 +38,30 @@ No new features.
 - Cancelling discards only the unfinished workout; the saved routine remains unchanged.
 - Cancelled workouts are not written to History.
 - service-worker cache version bumped to `cholscore-v091`.
+
+## v1.4.1 iOS zoom fix + Rewards legibility
+- **Fixed the iOS Safari auto-zoom on focus.** Root cause: `<input>`/`<select>` use
+  `font:inherit` and every one of them sits inside a `<label>` styled at 14px —
+  under Safari's 16px no-zoom threshold, so focusing *any* field zoomed the whole
+  page. Fixed once at the shared `input,select{}` and `textarea{}` rules rather than
+  patching individual fields, so it's fixed everywhere at once and can't regress if a
+  new field gets added later without an explicit font-size.
+  Deliberately did **not** use `user-scalable=no`/`maximum-scale=1` on the viewport
+  meta tag — that "fixes" the same symptom but disables pinch-zoom entirely, which
+  is a real accessibility regression for anyone who needs it. Keeping fields at 16px
+  is the correct fix, not a workaround.
+- **Bumped Rewards tab text sizes.** The main offender: achievement descriptions
+  were full sentences rendered at 10px. Bumped to 12px with more line-height and a
+  taller card to fit. Also nudged up the card title, category tabs, category
+  summary, unlocked/locked state text, and the rarity badge — smaller, supporting
+  bumps so the size hierarchy still holds together rather than everything becoming
+  the same size.
+- Left the short uppercase "eyebrow" labels (SETS, WEIGHT, DISTANCE, etc.) alone
+  throughout the app — those are a deliberate small-caps label convention, not a
+  readability miss, and bumping them would blur the hierarchy between labels and
+  the values they describe.
+- `index.html` and the styles.css cache-busting query string bumped to `v114`.
+- service-worker cache version bumped to `cholscore-v114`.
 
 ## v1.4.0 Day Report + pulsing exercise days
 - Tapping any date on the History calendar (past or present) now opens a full-screen
