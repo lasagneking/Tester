@@ -852,6 +852,82 @@ textarea:focus{border-color:rgba(84,217,255,.6);box-shadow:0 0 0 3px rgba(84,217
   .exercise-complete-modal h2{font-size:28px}
   .ecm-icon-badge{width:72px;height:72px;font-size:34px}
 }
+
+/* ============ v1.3.0 quick-activity (walk/run) completion card ============ */
+.activity-complete-modal{
+  width:min(95vw,480px);padding:0;overflow:hidden;border-radius:30px;position:relative;
+  border:1px solid rgba(255,255,255,.1);box-shadow:0 30px 70px -20px rgba(0,0,0,.6);
+}
+.acm-scene{
+  position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(120% 70% at 18% -10%, rgba(255,209,102,.28), transparent 55%),
+    radial-gradient(110% 65% at 100% 0%, rgba(84,217,255,.18), transparent 55%),
+    radial-gradient(140% 90% at 50% 120%, rgba(168,121,255,.2), transparent 60%),
+    linear-gradient(180deg,#171b28 0%, #0d1119 75%);
+}
+.acm-stars{position:absolute;inset:0;overflow:hidden}
+.acm-stars i{position:absolute;width:3px;height:3px;border-radius:50%;background:#fff;opacity:.5;animation:acmTwinkle 3.2s ease-in-out infinite}
+@keyframes acmTwinkle{0%,100%{opacity:.15;transform:scale(.8)}50%{opacity:.9;transform:scale(1.15)}}
+
+.acm-content{position:relative;z-index:1;padding:34px 26px 28px;text-align:center}
+
+.acm-medal-wrap{position:relative;width:92px;height:92px;margin:0 auto 16px}
+.acm-medal-ribbon{
+  position:absolute;top:-13px;left:50%;transform:translateX(-50%);width:32px;height:28px;
+  background:linear-gradient(180deg,#ff6b7a,#c23f52);clip-path:polygon(0 0,100% 0,100% 100%,50% 78%,0 100%);
+}
+.acm-medal{
+  position:relative;z-index:1;width:92px;height:92px;border-radius:50%;
+  background:radial-gradient(circle at 32% 28%, #fff6da, var(--amber) 42%, #d99a1f 82%, #b87c14 100%);
+  border:3px solid #fff0c2;box-shadow:0 0 32px rgba(255,209,102,.45),inset 0 -6px 12px rgba(0,0,0,.25),inset 0 4px 10px rgba(255,255,255,.5);
+  display:grid;place-items:center;font-size:36px;
+  animation:acmMedalSwing 3.4s ease-in-out infinite;transform-origin:top center;
+}
+.acm-medal::after{
+  content:"";position:absolute;inset:0;border-radius:50%;
+  background:linear-gradient(115deg, transparent 30%, rgba(255,255,255,.75) 46%, transparent 62%);
+  background-size:250% 250%;background-position:-40% -40%;
+  animation:acmMedalShine 3.4s ease-in-out infinite;
+}
+@keyframes acmMedalSwing{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
+@keyframes acmMedalShine{0%,30%{background-position:-40% -40%}55%,100%{background-position:110% 110%}}
+.acm-type-badge{
+  position:absolute;bottom:-2px;right:-2px;width:32px;height:32px;border-radius:50%;
+  background:#12151c;border:2.5px solid #171b28;display:grid;place-items:center;font-size:17px;z-index:2;
+}
+
+.activity-complete-modal h2{font-size:29px;margin:6px 0 12px;font-weight:800;color:#fff}
+.activity-complete-modal #acmMessage{font-size:15.5px;line-height:1.55;color:#dcd6ea;margin:0 0 4px}
+.activity-complete-modal #acmMessage strong{color:#fff;font-weight:700}
+
+.acm-stats{display:flex;gap:10px;margin:22px 0 4px}
+.acm-stats div{
+  flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:18px;
+  padding:16px 8px;text-align:center;opacity:0;transform:translateY(12px);animation:acmStatIn .5s ease forwards;
+}
+.acm-stats div:nth-child(1){animation-delay:.12s}
+.acm-stats div:nth-child(2){animation-delay:.24s}
+.acm-stats div:nth-child(3){animation-delay:.36s}
+@keyframes acmStatIn{to{opacity:1;transform:translateY(0)}}
+.acm-stats span{display:block;font-size:9.5px;letter-spacing:.1em;color:#909aab;font-weight:900}
+.acm-stats strong{display:block;font-size:20px;margin-top:6px;color:#fff}
+.acm-stats small{display:block;font-size:9px;color:#7d7690;margin-top:2px}
+/* distance is the "contrast" stat — gold-tinted and a touch bigger */
+.acm-stats div.is-distance{background:rgba(255,209,102,.09);border-color:rgba(255,209,102,.35)}
+.acm-stats div.is-distance strong{font-size:24px;color:#ffe6ac}
+
+.activity-complete-modal .primary-btn{font-size:16px;padding:17px;margin-top:16px}
+@media(prefers-reduced-motion:reduce){
+  .acm-medal,.acm-medal::after,.acm-stars i{animation:none}
+  .acm-stats div{animation:none;opacity:1;transform:none}
+}
+@media(max-width:420px){
+  .acm-content{padding:28px 20px 24px}
+  .activity-complete-modal h2{font-size:25px}
+  .acm-medal-wrap{width:76px;height:76px}
+  .acm-medal{width:76px;height:76px;font-size:30px}
+}
 .workout-celebration-message{max-width:360px;margin:0 auto}
 .workout-result-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:20px 0}
 .workout-result-grid strong{display:block;font-size:23px;margin-top:6px;color:#fff}

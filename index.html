@@ -10,7 +10,7 @@
   <meta name="application-name" content="CholScore" />
   <title>CholScore</title>
   <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="styles.css?v=111" />
+  <link rel="stylesheet" href="styles.css?v=112" />
 </head>
 <body>
   <div id="app">
@@ -306,6 +306,22 @@
     </form>
   </dialog>
 
+  <dialog id="activityCompleteDialog" class="modal activity-complete-modal celebration">
+    <div class="acm-scene" aria-hidden="true"><div class="acm-stars" id="acmStars"></div></div>
+    <div class="acm-content">
+      <div class="acm-medal-wrap">
+        <div class="acm-medal-ribbon"></div>
+        <div class="acm-medal">🥇</div>
+        <div class="acm-type-badge" id="acmTypeBadge">🚶</div>
+      </div>
+      <p class="eyebrow" id="acmEyebrow">WALK COMPLETE</p>
+      <h2 id="acmTitle">Great work!</h2>
+      <p id="acmMessage"></p>
+      <div id="acmStats" class="acm-stats"></div>
+      <button id="closeActivityComplete" class="primary-btn">Nice one!</button>
+    </div>
+  </dialog>
+
   <dialog id="routineDialog" class="modal routine-modal">
     <form method="dialog" id="routineForm">
       <div class="modal-head"><div><p class="eyebrow">BUILD IT ONCE</p><h3 id="routineDialogTitle">Create routine</h3></div><button type="button" data-close-dialog="routineDialog" aria-label="Cancel">×</button></div>
@@ -376,7 +392,7 @@
     <p id="finishWorkoutSummary" class="workout-celebration-message premium-subtitle"></p>
 
     <div class="premium-athlete premium-athlete-image" aria-hidden="true">
-      <img src="workout-victory-silhouette.png?v=111" alt="" />
+      <img src="workout-victory-silhouette.png?v=112" alt="" />
     </div>
 
     <div class="workout-result-grid premium-result-grid">
@@ -662,7 +678,7 @@
   </dialog>
 
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <script src="app.js?v=111"></script>
+  <script src="app.js?v=112"></script>
 
   <script>
     if ("serviceWorker" in navigator) {

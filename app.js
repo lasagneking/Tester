@@ -1442,6 +1442,44 @@ qsa(".quick-activity").forEach(btn=>btn.addEventListener("click",()=>{
 qsa("#quickFeelingRow button").forEach(btn=>btn.addEventListener("click",()=>{
   qsa("#quickFeelingRow button").forEach(x=>x.classList.remove("selected"));btn.classList.add("selected");selectedFeeling=Number(btn.dataset.feel);
 }));
+
+/* v1.3.0 walk/run completion card — gold medal + duration/distance/pace,
+   distance highlighted as the "contrast" stat since it's the derived,
+   most interesting number (pace) that duration alone can't tell you. */
+function formatActivityDuration(mins){
+  if(mins<60)return `${mins} min`;
+  const h=Math.floor(mins/60),m=mins%60;
+  return m?`${h}h ${m}m`:`${h}h`;
+}
+function formatPace(minutes,displayDistance){
+  if(!displayDistance)return null;
+  const paceMin=minutes/displayDistance,m=Math.floor(paceMin),s=Math.round((paceMin-m)*60);
+  return `${m}:${String(s).padStart(2,"0")}`;
+}
+const activityFeelWord={1:"rough",2:"a bit tough",3:"steady",4:"good",5:"great"};
+function showActivityCompleteCard(type,minutes,distanceKm,feel){
+  const isWalk=type==="walk",unit=distanceUnit();
+  const displayDistance=distanceKm>0?Number(kmToDisplay(distanceKm).toFixed(1)):0;
+  const pace=formatPace(minutes,displayDistance);
+  $("acmTypeBadge").textContent=isWalk?"🚶":"🏃";
+  $("acmEyebrow").textContent=isWalk?"WALK COMPLETE":"RUN COMPLETE";
+  $("acmTitle").textContent=`Great work, ${state.profile.name}!`;
+  const verb=isWalk?"walked":"ran";
+  $("acmMessage").innerHTML=displayDistance>0
+    ? `You ${verb} <strong>${displayDistance} ${unit}</strong> in <strong>${formatActivityDuration(minutes)}</strong>${pace?` — averaging a <strong>${pace}/${unit}</strong> pace`:""}. Feeling ${activityFeelWord[feel]||"steady"} ${feelEmoji(feel)}`
+    : `You ${verb} for <strong>${formatActivityDuration(minutes)}</strong> today. Nice work staying active. ${feelEmoji(feel)}`;
+  const stats=[`<div><span>DURATION</span><strong>${formatActivityDuration(minutes)}</strong></div>`];
+  if(displayDistance>0){
+    stats.push(`<div class="is-distance"><span>DISTANCE</span><strong>${displayDistance} ${unit}</strong></div>`);
+    if(pace)stats.push(`<div><span>PACE</span><strong>${pace}</strong><small>min/${unit}</small></div>`);
+  }else{
+    stats.push(`<div><span>FEELING</span><strong>${feelEmoji(feel)}</strong><small>${activityFeelWord[feel]||"steady"}</small></div>`);
+  }
+  $("acmStats").innerHTML=stats.join("");
+  $("activityCompleteDialog").showModal();
+}
+$("closeActivityComplete").addEventListener("click",()=>$("activityCompleteDialog").close());
+
 $("exerciseForm").addEventListener("submit",e=>{
   e.preventDefault();
   const name=$("activityName").value.trim(),start=$("startTime").value,finish=$("finishTime").value,type=$("activityType").value;
@@ -1450,7 +1488,8 @@ $("exerciseForm").addEventListener("submit",e=>{
   ensureDay().activities.push({id:id(),name,start,finish,type,minutes,distance,feel,created:Date.now()});
   state.achievements.firstMove=true;saveState();$("exerciseDialog").close();e.target.reset();selectedFeeling=3;
   qsa("#quickFeelingRow button").forEach(x=>x.classList.toggle("selected",x.dataset.feel==="3"));renderAll();
-  setTimeout(()=>alert(`Great work, ${state.profile.name}! ${minutes} minutes completed. ${feelEmoji(feel)}`),70);
+  if(type==="walk"||type==="run") setTimeout(()=>showActivityCompleteCard(type,minutes,distance,feel),70);
+  else setTimeout(()=>alert(`Great work, ${state.profile.name}! ${minutes} minutes completed. ${feelEmoji(feel)}`),70);
 });
 
 
@@ -1521,6 +1560,7 @@ function seedStarField(elId,count=22){
 }
 seedStarField("checkoutStars");
 seedStarField("ecmStars",16);
+seedStarField("acmStars",16);
 
 function resetCheckoutRings(){
   const rings=[$("checkoutRingSat"),$("checkoutRingMins"),$("checkoutRingScore")];

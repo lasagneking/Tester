@@ -1,4 +1,4 @@
-CholScore v1.2.0 - Redesigned exercise-complete cards (standard / timed / final)
+CholScore v1.3.0 - Gold-medal completion card for quick walk/run logging
 
 # CholScore v0.8.5 — Cache + Delete Hotfix
 
@@ -38,6 +38,29 @@ No new features.
 - Cancelling discards only the unfinished workout; the saved routine remains unchanged.
 - Cancelled workouts are not written to History.
 - service-worker cache version bumped to `cholscore-v091`.
+
+## v1.3.0 walk/run completion card
+- Replaced the native browser `alert()` ("Great work, Bill! 125 minutes completed.")
+  that fired after logging a quick Walk or Run with a proper on-brand card, matching
+  the approved mockup. "One-off" activity logging is untouched — still the plain
+  alert, as scoped.
+- Gold medal on a ribbon is the signature element: gently swings side to side like
+  it's hanging around your neck, with a light sweep animation passing across it. A
+  small 🚶/🏃 badge on the medal's corner shows which activity it was — same medal
+  theme for both rather than two different designs.
+- Distance is the "contrast" stat: shown in its own gold-tinted, slightly larger
+  card, and used to derive a **pace** stat (min per mile/km) alongside duration —
+  the useful number duration alone can't tell you. Falls back to Duration + Feeling
+  when distance is left blank, since it's an optional field on the form.
+- Message is one combined sentence: "You walked 6.5 mi in 2h 5m — averaging a
+  19:14/mi pace. Feeling great 😄."
+- Reuses the existing `distanceUnit()`/`kmToDisplay()` helpers, so it correctly
+  respects the user's mi/km preference.
+- Reuses the `seedStarField()` helper (factored out this release) for its
+  twinkling star background, same as the checkout and exercise-complete cards.
+- Respects `prefers-reduced-motion`.
+- `index.html`, `styles.css`, and the image cache-busting query strings bumped to `v112`.
+- service-worker cache version bumped to `cholscore-v112`.
 
 ## v1.2.0 exercise-complete card redesign
 - Redesigned the "exercise complete" card that appears after every exercise (all 3
