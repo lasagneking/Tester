@@ -1352,24 +1352,6 @@ function showWorkoutCelebration(){
   $("finishWorkoutSummary").textContent=randomFrom(workoutSubCheers);
   $("finishTotalWeight").textContent=volume>0?`${fmt(volume)} kg`:"—";
   $("finishWorkoutDuration").textContent=mins<60?`${mins} min`:elapsedClock(w.startedAt);
-
-  // Temporary diagnostic (v1.0.2): if the total comes out to zero despite
-  // the workout having exercises, print exactly what each exercise's
-  // weight/reps/completed data looked like at calculation time, right on
-  // the screen. Remove this block once the real cause is found and fixed.
-  const debugEl=$("finishVolumeDebug");
-  if(debugEl){
-    if(volume<=0&&(w.exercises||[]).length){
-      const lines=(w.exercises||[]).map(e=>{
-        const setsDesc=(e.sets||[]).map(s=>`${s.completed?"✓":"·"}${s.actual===""?"(empty)":s.actual}`).join(", ");
-        return `${e.name} — weight:${JSON.stringify(e.weight)} timed:${e.timed} sets:[${setsDesc}]`;
-      });
-      debugEl.textContent="DEBUG (temporary) — total came out to 0. Per-exercise data:\n"+lines.join("\n");
-      debugEl.style.display="block";
-    }else{
-      debugEl.style.display="none";debugEl.textContent="";
-    }
-  }
   finishFeeling=3;qsa("[data-finish-feel]").forEach(x=>x.classList.toggle("selected",x.dataset.finishFeel==="3"));
   startConfettiLoop($("confettiBurst"));
 

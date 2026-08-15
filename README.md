@@ -1,4 +1,4 @@
-CholScore v1.0.2 - Diagnostic for the "Total Weight Lifted" showing "—" bug
+CholScore v1.0.3 - Removed the temporary volume-zero diagnostic
 
 # CholScore v0.8.5 — Cache + Delete Hotfix
 
@@ -38,6 +38,17 @@ No new features.
 - Cancelling discards only the unfinished workout; the saved routine remains unchanged.
 - Cancelled workouts are not written to History.
 - service-worker cache version bumped to `cholscore-v091`.
+
+## v1.0.3 debug removed
+- Confirmed via the v1.0.2 diagnostic: the "—" was correct behaviour, not a
+  calculation bug — the affected exercise genuinely had `weight:0` stored against it
+  (stale/legacy data on one pre-existing exercise). Re-adding that exercise fixed it.
+- `#finishVolumeDebug` element and its wiring in `showWorkoutCelebration` removed —
+  the completion screen is back to just the two stat cards.
+- The `Number.isFinite` hardening and the `completeCurrentExercise` fix from v1.0.2
+  are kept, since they're good practice regardless.
+- `index.html`, `styles.css`, and the image cache-busting query strings bumped to `v103`.
+- service-worker cache version bumped to `cholscore-v103`.
 
 ## v1.0.2 volume-zero diagnostic (temporary)
 - Reported: "Total Weight Lifted" sometimes shows "—" on the completion screen even
