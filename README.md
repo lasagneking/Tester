@@ -1,4 +1,4 @@
-CholScore v1.0.0 - Fully animated confetti burst on workout completion screen
+CholScore v1.0.1 - Continuous confetti loop on workout completion screen
 
 # CholScore v0.8.5 — Cache + Delete Hotfix
 
@@ -38,6 +38,18 @@ No new features.
 - Cancelling discards only the unfinished workout; the saved routine remains unchanged.
 - Cancelled workouts are not written to History.
 - service-worker cache version bumped to `cholscore-v091`.
+
+## v1.0.1 continuous confetti loop
+- The v1.0.0 burst only ran once (~2s) and then stopped. Confetti now trickles
+  continuously — 4 new pieces every 220ms — for as long as the completion screen
+  is open.
+- Each piece removes itself from the DOM right after its own fall animation
+  finishes, so the piece count stays small and constant rather than growing forever.
+- The loop is tied to the dialog's native `close` event, so it stops the instant the
+  screen closes however that happens (Done button, cancel workout, Esc key) — nothing
+  keeps running in the background.
+- `index.html`, `styles.css`, and the image cache-busting query strings bumped to `v101`.
+- service-worker cache version bumped to `cholscore-v101`.
 
 ## v1.0.0 fully animated confetti burst
 - Removed the confetti diamond and star shapes that were baked into
