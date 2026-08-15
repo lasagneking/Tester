@@ -1753,8 +1753,89 @@ $("shareCheckout").addEventListener("click",async()=>{
 /* History/profile */
 $("prevMonth").addEventListener("click",()=>{calendarDate.setMonth(calendarDate.getMonth()-1);renderCalendar();});
 $("nextMonth").addEventListener("click",()=>{calendarDate.setMonth(calendarDate.getMonth()+1);renderCalendar();});
-$("profileBtn").addEventListener("click",()=>{$("settingsName").value=state.profile.name;$("settingsTarget").value=state.profile.target;$("settingsUnits").value=distanceUnit();$("settingsDialog").showModal();});
+$("profileBtn").addEventListener("click",()=>{$("settingsName").value=state.profile.name;$("settingsTarget").value=state.profile.target;$("settingsUnits").value=distanceUnit();renderBackupStatus();$("settingsDialog").showModal();});
 $("saveSettings").addEventListener("click",()=>{const n=$("settingsName").value.trim(),t=Number($("settingsTarget").value),u=$("settingsUnits").value==="km"?"km":"mi";if(n&&t>0){state.profile={...state.profile,name:n,target:t,distanceUnit:u};saveState();renderAll();}});
 $("resetData").addEventListener("click",()=>{if(confirm("Reset all CholScore data on this device?")){localStorage.removeItem(STORAGE_KEY);localStorage.removeItem(LEGACY_KEY);state=cloneDefault();$("settingsDialog").close();location.reload();}});
+
+/* v1.5.0 Backup & Restore — everything lives only in this device's
+   localStorage, so losing the phone or clearing site data would otherwise
+   mean losing it all. Export writes the whole state to a JSON file the
+   person can save anywhere (Files, a cloud drive, email to themselves);
+   Import reads one back and reuses normaliseState() so it's exactly as
+   forgiving of odd/old data as loading the app normally is. */
+const BACKUP_META_KEY="cholscore_backup_meta";
+function backupStatusText(){
+  try{
+    const meta=JSON.parse(localStorage.getItem(BACKUP_META_KEY)||"null");
+    if(!meta?.lastBackupAt)return "You haven't backed up yet — export one to keep your data safe.";
+    const days=Math.floor((Date.now()-new Date(meta.lastBackupAt).getTime())/86400000);
+    if(days<=0)return "Last backup: today. You're all set.";
+    if(days===1)return "Last backup: yesterday.";
+    if(days<14)return `Last backup: ${days} days ago.`;
+    return `Last backup: ${days} days ago — probably worth doing another.`;
+  }catch(err){return "You haven't backed up yet — export one to keep your data safe.";}
+}
+function renderBackupStatus(){const el=$("backupStatus");if(el)el.textContent=backupStatusText();}
+function markBackedUpNow(){localStorage.setItem(BACKUP_META_KEY,JSON.stringify({lastBackupAt:new Date().toISOString()}));renderBackupStatus();}
+
+$("exportBackupBtn").addEventListener("click",async()=>{
+  const payload={app:"CholScore",exportedAt:new Date().toISOString(),version:STORAGE_KEY,data:state};
+  const filename=`cholscore-backup-${new Date().toISOString().slice(0,10)}.json`;
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+
+  // A file that only ever lands in this phone's Downloads/Files app isn't a real
+  // backup — it's lost along with the phone in exactly the scenario that matters.
+  // Where the OS supports it, hand the file to the native share sheet instead, so
+  // the person can send it straight to iCloud Drive, Google Drive, email, Messages,
+  // AirDrop, etc. — somewhere that actually survives losing this device.
+  let file=null;
+  try{file=new File([blob],filename,{type:"application/json"});}catch(err){/* File constructor unsupported — fall through to plain download */}
+
+  if(file&&navigator.canShare&&navigator.canShare({files:[file]})){
+    try{
+      await navigator.share({files:[file],title:"CholScore backup",text:"CholScore data backup — save this somewhere off this device."});
+      markBackedUpNow();
+      return;
+    }catch(err){
+      if(err&&err.name==="AbortError")return; // person cancelled the share sheet — not a failure, don't also trigger a download
+      // any other error: fall through to the plain-download fallback below
+    }
+  }
+
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;a.download=filename;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  markBackedUpNow();
+  alert("Saved to this device's Downloads/Files. For a real backup, please also move or share this file somewhere off the phone — email it to yourself, or save it to a cloud drive.");
+});
+
+$("importBackupBtn").addEventListener("click",()=>$("importBackupFile").click());
+$("importBackupFile").addEventListener("change",e=>{
+  const file=e.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    let parsed;
+    try{parsed=JSON.parse(reader.result);}
+    catch(err){alert("That file doesn't look like a valid CholScore backup — it couldn't be read as JSON.");e.target.value="";return;}
+    const incoming=(parsed&&parsed.app==="CholScore"&&parsed.data)?parsed.data:parsed;
+    if(!incoming||typeof incoming!=="object"||!("days"in incoming||"profile"in incoming)){
+      alert("That file doesn't look like a valid CholScore backup.");e.target.value="";return;
+    }
+    const when=parsed?.exportedAt?new Date(parsed.exportedAt).toLocaleString():"an unknown date";
+    if(!confirm(`Restore this backup from ${when}?\n\nThis replaces everything currently on this device — routines, food and exercise history, achievements, all of it — and can't be undone.`)){
+      e.target.value="";return;
+    }
+    state=normaliseState(incoming);
+    saveState();
+    markBackedUpNow();
+    location.reload();
+  };
+  reader.onerror=()=>alert("Couldn't read that file — please try again.");
+  reader.readAsText(file);
+  e.target.value="";
+});
 
 init();

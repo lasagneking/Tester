@@ -10,7 +10,7 @@
   <meta name="application-name" content="CholScore" />
   <title>CholScore</title>
   <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="styles.css?v=114" />
+  <link rel="stylesheet" href="styles.css?v=116" />
 </head>
 <body>
   <div id="app">
@@ -392,7 +392,7 @@
     <p id="finishWorkoutSummary" class="workout-celebration-message premium-subtitle"></p>
 
     <div class="premium-athlete premium-athlete-image" aria-hidden="true">
-      <img src="workout-victory-silhouette.png?v=114" alt="" />
+      <img src="workout-victory-silhouette.png?v=116" alt="" />
     </div>
 
     <div class="workout-result-grid premium-result-grid">
@@ -673,6 +673,14 @@
         </select>
       </label>
       <button id="saveSettings" class="primary-btn" value="default">Save changes</button><button type="button" class="cancel-btn" data-close-dialog="settingsDialog">Cancel</button>
+
+      <p class="eyebrow" style="margin-top:22px">BACKUP &amp; RESTORE</p>
+      <p id="backupStatus" class="modal-note">You haven't backed up yet.</p>
+      <p class="modal-note">Export gives you a file — it only protects you if it ends up somewhere other than this phone: a cloud drive, email, or another device.</p>
+      <button id="exportBackupBtn" type="button" class="secondary-btn backup-btn">⬇ Export backup</button>
+      <button id="importBackupBtn" type="button" class="secondary-btn backup-btn">⬆ Restore from backup</button>
+      <input id="importBackupFile" type="file" accept="application/json,.json" class="hidden" />
+
       <button id="resetData" type="button" class="danger-btn">Reset CholScore data</button>
     </form>
   </dialog>
@@ -683,7 +691,7 @@
   </dialog>
 
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <script src="app.js?v=114"></script>
+  <script src="app.js?v=116"></script>
 
   <script>
     if ("serviceWorker" in navigator) {

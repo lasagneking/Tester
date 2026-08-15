@@ -1,4 +1,4 @@
-CholScore v1.4.1 - Fixed iOS input zoom + bigger Rewards text
+CholScore v1.5.1 - Export now offers real off-device destinations
 
 # CholScore v0.8.5 — Cache + Delete Hotfix
 
@@ -38,6 +38,60 @@ No new features.
 - Cancelling discards only the unfinished workout; the saved routine remains unchanged.
 - Cancelled workouts are not written to History.
 - service-worker cache version bumped to `cholscore-v091`.
+
+## v1.5.1 export now targets real off-device destinations
+- Correction to v1.5.0: as first shipped, "Export backup" only ever saved the file
+  to the same phone's Downloads/Files — which doesn't actually protect against
+  losing that phone, the exact scenario this feature was for.
+- Export now tries `navigator.share()` with the backup file first, wherever the OS
+  supports sharing files (iOS Safari, Android Chrome). That hands the file straight
+  to the native share sheet — iCloud Drive, Google Drive, email, Messages, AirDrop —
+  genuine off-device destinations, rather than just Downloads.
+- Falls back to the previous plain-download behaviour only where file-sharing isn't
+  supported (desktop browsers, very old mobile browsers) — and now shows a reminder
+  afterwards to move the file off the device manually in that case.
+- Cancelling the share sheet is handled as a cancellation, not an error: no
+  redundant fallback download fires, and "Last backup" doesn't update, since nothing
+  was actually saved anywhere.
+- Settings now says outright, before you even tap Export, that the file only
+  protects you once it's somewhere other than this phone.
+- Tested all four code paths (share succeeds / share cancelled / share unsupported /
+  `File` constructor unsupported) before shipping.
+- `index.html`, `styles.css`, `app.js`, and the image cache-busting query strings
+  bumped to `v116`.
+- service-worker cache version bumped to `cholscore-v116`.
+
+## v1.5.0 Backup & Restore
+- Everything in CholScore lives only in this device's `localStorage` — losing the
+  phone, clearing site data, or a browser/OS update gone wrong would otherwise mean
+  losing everything with no way back. Added a proper Export/Import to Settings.
+- **Export backup**: downloads a JSON file (`cholscore-backup-YYYY-MM-DD.json`)
+  containing the entire state — profile, every logged day, all routines, workout
+  history, achievements. Works the same way on iOS Safari and Android Chrome (both
+  hand it to the device's normal "save/share file" flow — no server involved, since
+  this is a fully static app).
+- **Restore from backup**: reads a previously exported file back in. Reuses the
+  app's own `normaliseState()` — the exact same function that runs every time the
+  app loads — so a restored backup gets the same defaulting/migration safety net as
+  normal data, and old exports stay restorable even after future updates change the
+  data shape.
+- Validates the file before touching anything: rejects anything that isn't
+  recognisable as CholScore data (tested against garbage JSON, arrays, and other
+  nonsense) before ever asking to proceed, and requires an explicit confirmation
+  naming the backup's export date before overwriting current data. Also accepts a
+  raw (unwrapped) state dump, not just the full export format, in case anyone's
+  hand-editing files.
+- Settings now shows **"Last backup: N days ago"** (tracked locally, separate from
+  the data itself), nudging towards another backup once it's been a couple of
+  weeks — the low-effort version of a backup reminder, without adding a persistent
+  banner elsewhere in the app.
+- Verified the full export→import round trip against real sample data (profile,
+  a logged day with food/activities, a routine, achievements) before shipping —
+  every field survives intact, including things like food IDs that must NOT get
+  regenerated on restore.
+- `index.html`, `styles.css`, `app.js`, and the image cache-busting query strings
+  bumped to `v115`.
+- service-worker cache version bumped to `cholscore-v115`.
 
 ## v1.4.1 iOS zoom fix + Rewards legibility
 - **Fixed the iOS Safari auto-zoom on focus.** Root cause: `<input>`/`<select>` use
