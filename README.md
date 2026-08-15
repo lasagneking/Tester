@@ -1,4 +1,4 @@
-CholScore v1.1.0 - Redesigned daily checkout summary with animated rings
+CholScore v1.2.0 - Redesigned exercise-complete cards (standard / timed / final)
 
 # CholScore v0.8.5 — Cache + Delete Hotfix
 
@@ -38,6 +38,30 @@ No new features.
 - Cancelling discards only the unfinished workout; the saved routine remains unchanged.
 - Cancelled workouts are not written to History.
 - service-worker cache version bumped to `cholscore-v091`.
+
+## v1.2.0 exercise-complete card redesign
+- Redesigned the "exercise complete" card that appears after every exercise (all 3
+  variants — standard/weighted, timed, and the final one leading into the workout
+  result), matching the app's existing dark theme and following the same visual
+  family established for the daily checkout and workout-complete screens.
+- Bigger card throughout: wider dialog, larger heading, bigger icon badge, more
+  generous stat-card padding.
+- Each variant gets its own animated icon badge instead of a static 💪 emoji:
+  💪 flexes gently for standard weighted exercises, ⏱️ ticks side to side for timed
+  ones, 🏆 sparkles gold for the final exercise of the workout, foreshadowing
+  the workout-result screen — each with a matching glow-scene background tint
+  (green/cyan/gold) and a twinkling star field, all built from the app's own colour
+  tokens rather than external images.
+- Stat cards (Sets/Weight/Volume or Sets/Total Time/Best Set) fade and slide in with
+  a stagger, and the numeric ones (weight, volume, total time, best set) count up
+  from zero over ~650ms rather than just appearing — reuses the existing
+  `formatExerciseSeconds` helper so timed values are formatted exactly as before.
+- Removed the old static "✦ · ✧ · ✦" sparkle text row and the old flat 💪 emoji in
+  favour of the animated icon badge + star field.
+- Respects `prefers-reduced-motion` (animations disabled, content shown in its final
+  state immediately).
+- `index.html`, `styles.css`, and the image cache-busting query strings bumped to `v111`.
+- service-worker cache version bumped to `cholscore-v111`.
 
 ## v1.1.0 daily checkout redesign
 - Replaced the basic "Nice work, Bill!" checkout dialog with a redesigned summary

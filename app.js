@@ -1287,6 +1287,22 @@ function stopTimedSet(ei,si){
   set.timedSeconds=seconds;set.actual=String(seconds);set.timerStartedAt=null;set.completed=true;saveState();
   renderLiveExercises();
 }
+const ecmIcons={standard:"💪",timed:"⏱️",final:"🏆"};
+function animateExerciseCountUps(container){
+  container.querySelectorAll("[data-count-target]").forEach(el=>{
+    const target=Number(el.dataset.countTarget||0);
+    const decimals=Number(el.dataset.countDecimals||0);
+    const isTime=el.dataset.countTime==="1";
+    const duration=650,start=performance.now();
+    function frame(now){
+      const t=Math.min(1,(now-start)/duration),eased=1-Math.pow(1-t,3),val=target*eased;
+      el.textContent=isTime?formatExerciseSeconds(val):val.toFixed(decimals);
+      if(t<1)requestAnimationFrame(frame);
+      else el.textContent=isTime?formatExerciseSeconds(target):target.toFixed(decimals);
+    }
+    requestAnimationFrame(frame);
+  });
+}
 function completeCurrentExercise(){
   const w=state.activeWorkout;if(!w)return;const ei=w.currentExerciseIndex||0,e=w.exercises[ei];if(!e||!allSetsComplete(e))return;
   clearTimedSetTimers();
@@ -1294,14 +1310,23 @@ function completeCurrentExercise(){
   const volume=exerciseVolume(e,w);
   const timedTotal=e.timed?e.sets.reduce((sum,s)=>sum+Number(s.timedSeconds||s.actual||0),0):0;
   const bestTimed=e.timed?Math.max(...e.sets.map(s=>Number(s.timedSeconds||s.actual||0))):0;
+  const isFinal=ei>=w.exercises.length-1;
+  const variant=isFinal?"final":e.timed?"timed":"standard";
+
+  const dialog=$("exerciseCompleteDialog");
+  dialog.classList.remove("variant-standard","variant-timed","variant-final");
+  dialog.classList.add(`variant-${variant}`);
+  $("ecmIcon").textContent=ecmIcons[variant];
+
   $("exerciseCompleteTitle").textContent=`${randomFrom(exerciseCheers)}, ${state.profile.name}!`;
   $("exerciseCompleteMessage").textContent=e.timed
-    ? `${e.name} complete — ${formatExerciseSeconds(timedTotal)} held across ${e.sets.length} ${e.sets.length===1?"set":"sets"}. ${ei<w.exercises.length-1?"Take that momentum into the next one.":"That was the final exercise — workout complete!"}`
-    : `${e.name} complete. ${ei<w.exercises.length-1?"Take that momentum into the next one.":"That was the final exercise — workout complete!"}`;
+    ? `${e.name} complete — ${formatExerciseSeconds(timedTotal)} held across ${e.sets.length} ${e.sets.length===1?"set":"sets"}. ${isFinal?"That was the final exercise — workout complete!":"Take that momentum into the next one."}`
+    : `${e.name} complete. ${isFinal?"That was the final exercise — workout complete!":"Take that momentum into the next one."}`;
   $("exerciseCompleteStats").innerHTML=e.timed
-    ? `<div><span>SETS</span><strong>${e.sets.length} ✓</strong></div><div><span>TOTAL TIME</span><strong>${formatExerciseSeconds(timedTotal)}</strong></div><div><span>BEST SET</span><strong>${formatExerciseSeconds(bestTimed)}</strong></div>`
-    : `<div><span>SETS</span><strong>${e.sets.length} ✓</strong></div>${Number(e.weight)>0?`<div><span>WEIGHT</span><strong>${fmt(e.weight)} kg</strong></div><div><span>VOLUME</span><strong>${fmt(volume)} kg</strong></div>`:""}`;
-  $("nextExerciseBtn").textContent=ei<w.exercises.length-1?"Next exercise":"See workout result";
+    ? `<div><span>SETS</span><strong>${e.sets.length} ✓</strong></div><div><span>TOTAL TIME</span><strong><b data-count-target="${timedTotal}" data-count-time="1">0s</b></strong></div><div><span>BEST SET</span><strong><b data-count-target="${bestTimed}" data-count-time="1">0s</b></strong></div>`
+    : `<div><span>SETS</span><strong>${e.sets.length} ✓</strong></div>${Number(e.weight)>0?`<div><span>WEIGHT</span><strong><b data-count-target="${e.weight}" data-count-decimals="1">0.0</b> kg</strong></div><div><span>VOLUME</span><strong><b data-count-target="${volume}" data-count-decimals="1">0.0</b> kg</strong></div>`:""}`;
+  animateExerciseCountUps($("exerciseCompleteStats"));
+  $("nextExerciseBtn").textContent=isFinal?"See workout result":"Next exercise";
   $("exerciseCompleteDialog").showModal();
 }
 $("nextExerciseBtn").addEventListener("click",()=>{
@@ -1480,10 +1505,10 @@ $("deleteFoodBtn").addEventListener("click",()=>{
    screen. */
 const CHECKOUT_CIRC = 2 * Math.PI * 38; // 238.76
 
-(function seedCheckoutStars(){
-  const layer=$("checkoutStars");
+function seedStarField(elId,count=22){
+  const layer=$(elId);
   if(!layer)return;
-  for(let i=0;i<22;i++){
+  for(let i=0;i<count;i++){
     const s=document.createElement("i");
     s.style.left=(Math.random()*100)+"%";
     s.style.top=(Math.random()*100)+"%";
@@ -1493,7 +1518,9 @@ const CHECKOUT_CIRC = 2 * Math.PI * 38; // 238.76
     s.style.animationDelay=(Math.random()*3)+"s";
     layer.appendChild(s);
   }
-})();
+}
+seedStarField("checkoutStars");
+seedStarField("ecmStars",16);
 
 function resetCheckoutRings(){
   const rings=[$("checkoutRingSat"),$("checkoutRingMins"),$("checkoutRingScore")];

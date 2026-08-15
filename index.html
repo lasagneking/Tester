@@ -10,7 +10,7 @@
   <meta name="application-name" content="CholScore" />
   <title>CholScore</title>
   <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="styles.css?v=110" />
+  <link rel="stylesheet" href="styles.css?v=111" />
 </head>
 <body>
   <div id="app">
@@ -357,13 +357,15 @@
   </dialog>
 
   <dialog id="exerciseCompleteDialog" class="modal exercise-complete-modal celebration">
-    <div class="celebration-sparkles" aria-hidden="true">✦ · ✧ · ✦</div>
-    <div class="celebrate-icon">💪</div>
-    <p class="eyebrow">EXERCISE COMPLETE</p>
-    <h2 id="exerciseCompleteTitle">Brilliant work!</h2>
-    <p id="exerciseCompleteMessage"></p>
-    <div id="exerciseCompleteStats" class="exercise-complete-stats"></div>
-    <button id="nextExerciseBtn" class="primary-btn">Next exercise</button>
+    <div class="ecm-scene" aria-hidden="true"><div class="ecm-stars" id="ecmStars"></div></div>
+    <div class="ecm-content">
+      <div class="ecm-icon-badge" id="ecmIconBadge"><span id="ecmIcon">💪</span></div>
+      <p class="eyebrow" id="exerciseCompleteEyebrow">EXERCISE COMPLETE</p>
+      <h2 id="exerciseCompleteTitle">Brilliant work!</h2>
+      <p id="exerciseCompleteMessage"></p>
+      <div id="exerciseCompleteStats" class="exercise-complete-stats"></div>
+      <button id="nextExerciseBtn" class="primary-btn">Next exercise</button>
+    </div>
   </dialog>
 
   <dialog id="finishFeelingDialog" class="modal workout-celebration celebration premium-workout-result">
@@ -374,7 +376,7 @@
     <p id="finishWorkoutSummary" class="workout-celebration-message premium-subtitle"></p>
 
     <div class="premium-athlete premium-athlete-image" aria-hidden="true">
-      <img src="workout-victory-silhouette.png?v=110" alt="" />
+      <img src="workout-victory-silhouette.png?v=111" alt="" />
     </div>
 
     <div class="workout-result-grid premium-result-grid">
@@ -660,7 +662,7 @@
   </dialog>
 
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <script src="app.js?v=110"></script>
+  <script src="app.js?v=111"></script>
 
   <script>
     if ("serviceWorker" in navigator) {
