@@ -1475,16 +1475,78 @@ $("deleteFoodBtn").addEventListener("click",()=>{
   renderAll();
 });
 
+/* v1.1.0 daily checkout redesign — animated rings + share, reusing the
+   same weight/star-field patterns established for the workout completion
+   screen. */
+const CHECKOUT_CIRC = 2 * Math.PI * 38; // 238.76
+
+(function seedCheckoutStars(){
+  const layer=$("checkoutStars");
+  if(!layer)return;
+  for(let i=0;i<22;i++){
+    const s=document.createElement("i");
+    s.style.left=(Math.random()*100)+"%";
+    s.style.top=(Math.random()*100)+"%";
+    const size=1.5+Math.random()*2;
+    s.style.width=size+"px";s.style.height=size+"px";
+    s.style.animationDuration=(2.4+Math.random()*2.4)+"s";
+    s.style.animationDelay=(Math.random()*3)+"s";
+    layer.appendChild(s);
+  }
+})();
+
+function resetCheckoutRings(){
+  const rings=[$("checkoutRingSat"),$("checkoutRingMins"),$("checkoutRingScore")];
+  const badges=[$("checkoutBadgeSat"),$("checkoutBadgeMins"),$("checkoutBadgeScore")];
+  rings.forEach(r=>{r.style.transition="none";r.style.strokeDashoffset=CHECKOUT_CIRC;});
+  badges.forEach(b=>b.classList.remove("pop"));
+  void rings[0].getBoundingClientRect(); // force reflow before re-enabling the transition
+  rings.forEach(r=>{r.style.transition="";});
+}
+
 /* Checkout */
 $("checkoutBtn").addEventListener("click",()=>{
   const day=ensureDay(),score=scoreDay(day),{sat,mins}=totals(day),target=Number(state.profile.target);
   day.checkedOut=true;day.finalScore=score;if(sat<=target&&day.foods.length)state.achievements.onTarget=true;if(score>=80)state.achievements.score80=true;saveState();
-  $("checkoutScore").textContent=score;$("checkoutTitle").textContent=score>=90?`Outstanding, ${state.profile.name}!`:score>=75?`Brilliant day, ${state.profile.name}!`:score>=55?`Nice work, ${state.profile.name}!`:`Day complete, ${state.profile.name}.`;
-  const satText=sat<=target?`You finished ${fmt(target-sat)}g inside your saturated-fat target.`:`You logged ${fmt(sat)}g of saturated fat today.`;
-  $("checkoutText").textContent=`${satText}${mins?` You also completed ${Math.round(mins)} minutes of activity.`:""} Keep building on the positives.`;
-  $("checkoutDialog").showModal();renderAll();
+
+  $("checkoutTitle").textContent=score>=90?`Outstanding, ${state.profile.name}!`:score>=75?`Brilliant day, ${state.profile.name}!`:score>=55?`Nice work, ${state.profile.name}!`:`Day complete, ${state.profile.name}.`;
+
+  const satClause=sat<=target
+    ?`You stayed within your <strong>${fmt(target)}g saturated fat limit</strong> (${fmt(sat)}g consumed)`
+    :`You logged <strong>${fmt(sat)}g of saturated fat</strong> today`;
+  const moveClause=mins>0?` and exercised for <strong>${Math.round(mins)} minute${Math.round(mins)===1?"":"s"}</strong>`:"";
+  $("checkoutText").innerHTML=`${satClause}${moveClause}, earning you a super score of <strong>${score}</strong>.`;
+
+  const satPct=Math.min(1,sat/target),minsPct=Math.min(1,mins/45),scorePct=Math.min(1,score/100);
+  $("checkoutRingSatNum").innerHTML=`${fmt(sat)}<small>g</small>`;
+  $("checkoutRingMinsNum").innerHTML=`${Math.round(mins)}<small>min</small>`;
+  $("checkoutRingScoreNum").textContent=score;
+  $("checkoutRingSat").style.stroke=sat>target?"var(--amber)":"url(#checkoutGradGreen)";
+
+  resetCheckoutRings();
+  $("checkoutDialog").showModal();
+
+  requestAnimationFrame(()=>{
+    setTimeout(()=>{$("checkoutRingSat").style.strokeDashoffset=CHECKOUT_CIRC*(1-satPct);},120);
+    setTimeout(()=>{$("checkoutRingMins").style.strokeDashoffset=CHECKOUT_CIRC*(1-minsPct);},260);
+    setTimeout(()=>{$("checkoutRingScore").style.strokeDashoffset=CHECKOUT_CIRC*(1-scorePct);},400);
+    setTimeout(()=>{$("checkoutBadgeSat").classList.add("pop");},1180);
+    setTimeout(()=>{$("checkoutBadgeMins").classList.add("pop");},1320);
+    setTimeout(()=>{$("checkoutBadgeScore").classList.add("pop");},1460);
+  });
+
+  renderAll();
 });
 $("closeCheckout").addEventListener("click",()=>$("checkoutDialog").close());
+$("shareCheckout").addEventListener("click",async()=>{
+  const day=getDay(),score=scoreDay(day),{sat,mins}=totals(day);
+  const text=`My CholScore today: ${score}/100 — ${fmt(sat)}g saturated fat, ${Math.round(mins)} minutes of activity. 💪`;
+  const btn=$("shareCheckout"),original=btn.textContent;
+  try{
+    if(navigator.share){await navigator.share({text});}
+    else if(navigator.clipboard){await navigator.clipboard.writeText(text);btn.textContent="Copied to clipboard ✨";setTimeout(()=>{btn.textContent=original;},1600);}
+  }catch(err){/* user dismissed the native share sheet — nothing to do */}
+});
 
 /* History/profile */
 $("prevMonth").addEventListener("click",()=>{calendarDate.setMonth(calendarDate.getMonth()-1);renderCalendar();});

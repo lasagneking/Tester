@@ -10,7 +10,7 @@
   <meta name="application-name" content="CholScore" />
   <title>CholScore</title>
   <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="styles.css?v=103" />
+  <link rel="stylesheet" href="styles.css?v=110" />
 </head>
 <body>
   <div id="app">
@@ -374,7 +374,7 @@
     <p id="finishWorkoutSummary" class="workout-celebration-message premium-subtitle"></p>
 
     <div class="premium-athlete premium-athlete-image" aria-hidden="true">
-      <img src="workout-victory-silhouette.png?v=103" alt="" />
+      <img src="workout-victory-silhouette.png?v=110" alt="" />
     </div>
 
     <div class="workout-result-grid premium-result-grid">
@@ -586,12 +586,61 @@
     <button type="button" class="cancel-btn" data-close-dialog="foodDetailDialog">Close</button>
   </dialog>
 
-<dialog id="checkoutDialog" class="modal celebration">
-    <div class="celebrate-icon">✨</div>
-    <h2 id="checkoutTitle">Nice work!</h2>
-    <p id="checkoutText"></p>
-    <div class="checkout-score"><span>Today's CholScore</span><strong id="checkoutScore">0</strong></div>
-    <button id="closeCheckout" class="primary-btn">Done</button>
+<dialog id="checkoutDialog" class="modal celebration checkout-premium">
+    <div class="checkout-scene" aria-hidden="true"><div class="checkout-stars" id="checkoutStars"></div></div>
+    <svg width="0" height="0" style="position:absolute">
+      <defs>
+        <linearGradient id="checkoutGradGreen" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#55f0a7"/><stop offset="100%" stop-color="#a9f7d1"/></linearGradient>
+        <linearGradient id="checkoutGradCyan" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#54d9ff"/><stop offset="100%" stop-color="#a6ecff"/></linearGradient>
+        <linearGradient id="checkoutGradViolet" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#a879ff"/><stop offset="100%" stop-color="#d9c2ff"/></linearGradient>
+      </defs>
+    </svg>
+    <div class="checkout-content">
+      <div class="checkout-text-panel">
+        <div class="checkout-eyebrow">TODAY'S CHECKOUT</div>
+        <h2 id="checkoutTitle">Nice work!</h2>
+        <p id="checkoutText"></p>
+      </div>
+
+      <div class="checkout-rings">
+        <div class="checkout-ring-card">
+          <div class="checkout-ring-wrap">
+            <svg viewBox="0 0 92 92">
+              <circle class="checkout-ring-track" cx="46" cy="46" r="38"/>
+              <circle class="checkout-ring-fill" id="checkoutRingSat" stroke="url(#checkoutGradGreen)" cx="46" cy="46" r="38" stroke-dasharray="238.76" stroke-dashoffset="238.76"/>
+            </svg>
+            <div class="checkout-ring-num" id="checkoutRingSatNum">0.0<small>g</small></div>
+            <div class="checkout-check-badge" id="checkoutBadgeSat"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12.5L9.5 18L20 6" stroke="#06110c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          </div>
+          <div class="checkout-ring-label">Sat fat</div>
+        </div>
+        <div class="checkout-ring-card">
+          <div class="checkout-ring-wrap">
+            <svg viewBox="0 0 92 92">
+              <circle class="checkout-ring-track" cx="46" cy="46" r="38"/>
+              <circle class="checkout-ring-fill" id="checkoutRingMins" stroke="url(#checkoutGradCyan)" cx="46" cy="46" r="38" stroke-dasharray="238.76" stroke-dashoffset="238.76"/>
+            </svg>
+            <div class="checkout-ring-num" id="checkoutRingMinsNum">0<small>min</small></div>
+            <div class="checkout-check-badge" id="checkoutBadgeMins"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12.5L9.5 18L20 6" stroke="#06110c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          </div>
+          <div class="checkout-ring-label">Minutes</div>
+        </div>
+        <div class="checkout-ring-card">
+          <div class="checkout-ring-wrap">
+            <svg viewBox="0 0 92 92">
+              <circle class="checkout-ring-track" cx="46" cy="46" r="38"/>
+              <circle class="checkout-ring-fill" id="checkoutRingScore" stroke="url(#checkoutGradViolet)" cx="46" cy="46" r="38" stroke-dasharray="238.76" stroke-dashoffset="238.76"/>
+            </svg>
+            <div class="checkout-ring-num" id="checkoutRingScoreNum">0</div>
+            <div class="checkout-check-badge" id="checkoutBadgeScore"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12.5L9.5 18L20 6" stroke="#06110c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          </div>
+          <div class="checkout-ring-label">Score</div>
+        </div>
+      </div>
+
+      <button id="closeCheckout" class="primary-btn">Awesome, thanks!</button>
+      <button id="shareCheckout" type="button" class="checkout-share-btn">Share achievement</button>
+    </div>
   </dialog>
 
   <dialog id="settingsDialog" class="modal">
@@ -611,7 +660,7 @@
   </dialog>
 
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <script src="app.js?v=103"></script>
+  <script src="app.js?v=110"></script>
 
   <script>
     if ("serviceWorker" in navigator) {

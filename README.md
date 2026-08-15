@@ -1,4 +1,4 @@
-CholScore v1.0.3 - Removed the temporary volume-zero diagnostic
+CholScore v1.1.0 - Redesigned daily checkout summary with animated rings
 
 # CholScore v0.8.5 — Cache + Delete Hotfix
 
@@ -38,6 +38,31 @@ No new features.
 - Cancelling discards only the unfinished workout; the saved routine remains unchanged.
 - Cancelled workouts are not written to History.
 - service-worker cache version bumped to `cholscore-v091`.
+
+## v1.1.0 daily checkout redesign
+- Replaced the basic "Nice work, Bill!" checkout dialog with a redesigned summary
+  matching the approved mockup: opens anchored to the top of the screen (was
+  centred), bigger card, a layered CSS glow + twinkling star-field background
+  (no external/stock image — built from the app's own `--green`/`--cyan`/`--violet`
+  tokens so it can't clash or break if a link dies), with the headline and message
+  sitting in a frosted glass panel for legibility over the busier background.
+- Three animated rings (sat fat, minutes, score) fill in with a stagger on open, each
+  gaining a checkmark badge that pops in once its ring finishes — real data from
+  `totals()`/`scoreDay()`, not placeholders. Sat-fat ring shows amber instead of green
+  on days you've gone over target.
+- Message is now one combined, dynamically-built sentence in the style you asked for:
+  "You stayed within your Xg saturated fat limit (Yg consumed) and exercised for N
+  minutes, earning you a super score of NN." Falls back to gentler phrasing on
+  over-target days, consistent with the app's existing non-judgemental tone.
+- "Share achievement" is now functional — uses the native share sheet
+  (`navigator.share`) where available, otherwise copies a text summary to the
+  clipboard with a brief confirmation.
+- Old unused `#checkoutScore`/`.checkout-score` markup removed from the dialog (the
+  score now lives in its ring instead); the `.checkout-score` CSS rule was left in
+  place unused rather than risk touching something shared elsewhere.
+- Respects `prefers-reduced-motion` throughout.
+- `index.html`, `styles.css`, and the image cache-busting query strings bumped to `v110`.
+- service-worker cache version bumped to `cholscore-v110`.
 
 ## v1.0.3 debug removed
 - Confirmed via the v1.0.2 diagnostic: the "—" was correct behaviour, not a
