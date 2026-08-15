@@ -1,4 +1,4 @@
-CholScore v0.9.9 - Animated sparkle overlay on workout completion screen
+CholScore v1.0.0 - Fully animated confetti burst on workout completion screen
 
 # CholScore v0.8.5 — Cache + Delete Hotfix
 
@@ -39,15 +39,17 @@ No new features.
 - Cancelled workouts are not written to History.
 - service-worker cache version bumped to `cholscore-v091`.
 
-## v0.9.9 animated sparkle overlay
-- The confetti diamond and stars in `workout-victory-silhouette.png` are baked into the
-  flat artwork, so they can't be animated directly — instead a lightweight, purely CSS
-  sparkle layer (`.athlete-sparkle-overlay`) sits on top of the image, positioned over
-  the artwork's existing diamond and star accents.
-- Sparkles twinkle (scale + opacity + a little rotation) on a staggered loop, using
-  colours matched to the artwork (pink/magenta diamond, warm gold/white stars).
-- Because `<dialog>` is `display:none` while closed, the CSS animation restarts fresh
-  every time the workout completion screen is shown — no JS trigger needed.
-- Respects `prefers-reduced-motion`: sparkles show statically instead of animating.
-- `index.html`, `styles.css`, and the image cache-busting query strings bumped to `v099`.
-- service-worker cache version bumped to `cholscore-v099`.
+## v1.0.0 fully animated confetti burst
+- Removed the confetti diamond and star shapes that were baked into
+  `workout-victory-silhouette.png` (cleaned out with inpainting) — the artwork is now
+  a plain silhouette with no static decoration on it.
+- Removed the old static, non-animated `.premium-confetti` dots that sat behind the
+  title.
+- Replaced both with a single animated confetti burst (`#confettiBurst` /
+  `spawnConfetti()` in app.js): ~34 randomly coloured, sized, and timed pieces are
+  generated fresh each time `showWorkoutCelebration()` runs, and fall/rotate/fade via
+  a `confettiFall` CSS keyframe.
+- Palette matches the app's existing purple/gold/pink/cream/cyan accents.
+- Respects `prefers-reduced-motion`: confetti pieces stay invisible instead of animating.
+- `index.html`, `styles.css`, and the image cache-busting query strings bumped to `v100`.
+- service-worker cache version bumped to `cholscore-v100`.

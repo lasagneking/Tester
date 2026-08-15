@@ -1293,6 +1293,28 @@ $("nextExerciseBtn").addEventListener("click",()=>{
   if((w.currentExerciseIndex||0)<w.exercises.length-1){w.currentExerciseIndex+=1;saveState();renderLiveExercises();}
   else showWorkoutCelebration();
 });
+function spawnConfetti(container,count=34){
+  if(!container)return;
+  container.innerHTML="";
+  const colors=["#8d36ff","#f8bd36","#ea62c8","#fff0ba","#54d9ff"];
+  const frag=document.createDocumentFragment();
+  for(let i=0;i<count;i++){
+    const p=document.createElement("i");
+    const isCircle=Math.random()<0.32;
+    p.className="confetti-piece"+(isCircle?" circle":"");
+    const size=6+Math.random()*7;
+    p.style.width=(isCircle?size:size*0.68)+"px";
+    p.style.height=(isCircle?size:size*1.75)+"px";
+    p.style.left=(Math.random()*100)+"%";
+    p.style.background=colors[Math.floor(Math.random()*colors.length)];
+    p.style.setProperty("--sway",(Math.random()*70-35)+"px");
+    p.style.setProperty("--rot",(360+Math.random()*540)+"deg");
+    p.style.animationDuration=(1.5+Math.random()*1.15)+"s";
+    p.style.animationDelay=(Math.random()*0.55)+"s";
+    frag.appendChild(p);
+  }
+  container.appendChild(frag);
+}
 function showWorkoutCelebration(){
   const w=state.activeWorkout;if(!w)return;clearInterval(workoutTimer);
   const mins=Math.max(1,elapsedMinutes(w.startedAt)),volume=workoutVolume(w);
@@ -1301,6 +1323,7 @@ function showWorkoutCelebration(){
   $("finishTotalWeight").textContent=volume>0?`${fmt(volume)} kg`:"—";
   $("finishWorkoutDuration").textContent=mins<60?`${mins} min`:elapsedClock(w.startedAt);
   finishFeeling=3;qsa("[data-finish-feel]").forEach(x=>x.classList.toggle("selected",x.dataset.finishFeel==="3"));
+  spawnConfetti($("confettiBurst"));
 
   // The completion screen is a fresh full-screen moment, not a continuation
   // of the scrolled live-workout sheet.

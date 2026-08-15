@@ -849,10 +849,30 @@ textarea:focus{border-color:rgba(84,217,255,.6);box-shadow:0 0 0 3px rgba(84,217
 .premium-workout-result .finish-feeling-row button.selected{border-color:#ffd047;background:rgba(255,199,48,.12);box-shadow:0 0 16px rgba(255,199,48,.08)}
 .premium-done-btn{width:100%;border:1px solid #ffe986;border-radius:999px;padding:12px 20px 11px;background:linear-gradient(180deg,#ffe16c,#f5ae24);color:#221300;box-shadow:0 10px 28px rgba(245,174,36,.20),inset 0 1px rgba(255,255,255,.55);display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:10px;align-items:center;justify-content:center}
 .premium-done-btn span{grid-row:1/3;font-size:28px;justify-self:end}.premium-done-btn b{font-size:25px;line-height:1;justify-self:start}.premium-done-btn small{font-size:11px;justify-self:start;opacity:.74}
-.premium-confetti{position:absolute!important;inset:8px 8px auto;height:145px;z-index:1!important;pointer-events:none}
-.premium-confetti i{position:absolute;width:9px;height:18px;border-radius:2px;background:#8d36ff;transform:rotate(25deg);box-shadow:0 0 8px rgba(142,54,255,.25)}
-.premium-confetti i:nth-child(2n){background:#f8bd36;transform:rotate(-33deg)}.premium-confetti i:nth-child(3n){background:#ea62c8;width:7px;height:12px}.premium-confetti i:nth-child(4n){background:#fff0ba;width:6px;height:9px}
-.premium-confetti i:nth-child(1){left:5%;top:18px}.premium-confetti i:nth-child(2){left:18%;top:72px}.premium-confetti i:nth-child(3){left:29%;top:20px}.premium-confetti i:nth-child(4){left:39%;top:92px}.premium-confetti i:nth-child(5){left:52%;top:6px}.premium-confetti i:nth-child(6){left:64%;top:70px}.premium-confetti i:nth-child(7){left:74%;top:20px}.premium-confetti i:nth-child(8){left:89%;top:86px}.premium-confetti i:nth-child(9){left:9%;top:118px}.premium-confetti i:nth-child(10){left:84%;top:122px}.premium-confetti i:nth-child(11){left:95%;top:28px}.premium-confetti i:nth-child(12){left:57%;top:122px}
+/* v1.0.0 animated confetti burst — spawned dynamically in app.js each time
+   the workout completion screen is shown (see spawnConfetti). Replaces the
+   old static, non-animated confetti dots and the baked-in artwork sparkles
+   (the source PNG has had those cleaned out). */
+.confetti-burst{
+  position:absolute!important;top:0;left:0;right:0;height:235px;
+  overflow:hidden;pointer-events:none;z-index:1!important;
+  border-radius:30px 30px 0 0;
+}
+.confetti-piece{
+  position:absolute;top:-18px;left:0;border-radius:2px;opacity:0;
+  animation-name:confettiFall;animation-timing-function:cubic-bezier(.32,.62,.42,1);
+  animation-fill-mode:forwards;will-change:transform,opacity;
+}
+.confetti-piece.circle{border-radius:50%}
+@keyframes confettiFall{
+  0%{opacity:0;transform:translate(0,0) rotate(0deg) scale(.5)}
+  10%{opacity:1;transform:translate(calc(var(--sway) * .15),26px) rotate(120deg) scale(1)}
+  55%{opacity:1}
+  100%{opacity:0;transform:translate(var(--sway),265px) rotate(var(--rot)) scale(.85)}
+}
+@media(prefers-reduced-motion:reduce){
+  .confetti-piece{animation:none!important;opacity:0!important}
+}
 @media(max-width:430px){
   .premium-workout-result{padding:18px 14px 18px;border-radius:25px}.premium-star{width:56px;height:56px;font-size:29px}.premium-workout-result h2{font-size:38px}.premium-subtitle{font-size:15px!important}.premium-athlete{height:145px}.premium-result-grid{gap:7px}.workout-result-grid .premium-stat-card{padding:12px 7px}.premium-stat-card strong{font-size:28px!important}.premium-stat-card small{font-size:10px}.premium-motivation{grid-template-columns:45px 1fr;padding:11px 12px}.premium-motivation b{font-size:38px}.premium-motivation span{font-size:12px}
 }
@@ -871,7 +891,6 @@ textarea:focus{border-color:rgba(84,217,255,.6);box-shadow:0 0 0 3px rgba(84,217
 
 /* v0.9.5 approved premium workout silhouette asset */
 .premium-athlete-image{
-  position:relative;
   height:190px;
   max-width:390px;
   margin:-6px auto -10px;
@@ -880,45 +899,6 @@ textarea:focus{border-color:rgba(84,217,255,.6);box-shadow:0 0 0 3px rgba(84,217
   justify-content:center;
   overflow:visible;
   filter:none;
-}
-
-/* v0.9.9 animated sparkle overlay, layered above the static artwork to
-   bring its baked-in confetti/diamond accents to life on show. */
-.athlete-sparkle-overlay{position:absolute;inset:0;pointer-events:none;overflow:visible}
-.ath-spark{position:absolute;opacity:0;will-change:transform,opacity}
-.ath-spark.star{
-  color:#fff2c4;font-size:20px;line-height:1;
-  text-shadow:0 0 10px rgba(255,211,79,.8),0 0 20px rgba(255,211,79,.4);
-  animation:athStarTwinkle 2.8s ease-in-out infinite;
-}
-.ath-spark.diamond{
-  width:16px;height:16px;border-radius:3px;
-  background:linear-gradient(135deg,#ff9bea,#c33bff);
-  box-shadow:0 0 12px rgba(234,98,220,.65);
-  transform:rotate(45deg);
-  animation:athDiamondTwinkle 2.8s ease-in-out infinite;
-}
-.ath-spark.diamond-sm{width:11px;height:11px}
-.ath-spark.sp1{left:13%;top:66%;animation-delay:.05s}
-.ath-spark.sp2{right:12%;top:51%;font-size:24px;animation-delay:.6s}
-.ath-spark.sp3{right:9%;top:69%;animation-delay:1.15s}
-
-@keyframes athStarTwinkle{
-  0%{opacity:0;transform:scale(.3) rotate(0deg)}
-  25%{opacity:1;transform:scale(1.15) rotate(14deg)}
-  50%{opacity:.45;transform:scale(.78) rotate(-8deg)}
-  75%{opacity:1;transform:scale(1.08) rotate(9deg)}
-  100%{opacity:.7;transform:scale(.9) rotate(0deg)}
-}
-@keyframes athDiamondTwinkle{
-  0%{opacity:0;transform:rotate(45deg) scale(.3)}
-  25%{opacity:1;transform:rotate(45deg) scale(1.2)}
-  50%{opacity:.45;transform:rotate(45deg) scale(.8)}
-  75%{opacity:1;transform:rotate(45deg) scale(1.08)}
-  100%{opacity:.75;transform:rotate(45deg) scale(1)}
-}
-@media(prefers-reduced-motion:reduce){
-  .ath-spark{animation:none!important;opacity:.85!important}
 }
 .premium-athlete-image img{
   display:block;
