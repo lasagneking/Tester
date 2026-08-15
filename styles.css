@@ -871,6 +871,7 @@ textarea:focus{border-color:rgba(84,217,255,.6);box-shadow:0 0 0 3px rgba(84,217
 
 /* v0.9.5 approved premium workout silhouette asset */
 .premium-athlete-image{
+  position:relative;
   height:190px;
   max-width:390px;
   margin:-6px auto -10px;
@@ -879,6 +880,45 @@ textarea:focus{border-color:rgba(84,217,255,.6);box-shadow:0 0 0 3px rgba(84,217
   justify-content:center;
   overflow:visible;
   filter:none;
+}
+
+/* v0.9.9 animated sparkle overlay, layered above the static artwork to
+   bring its baked-in confetti/diamond accents to life on show. */
+.athlete-sparkle-overlay{position:absolute;inset:0;pointer-events:none;overflow:visible}
+.ath-spark{position:absolute;opacity:0;will-change:transform,opacity}
+.ath-spark.star{
+  color:#fff2c4;font-size:20px;line-height:1;
+  text-shadow:0 0 10px rgba(255,211,79,.8),0 0 20px rgba(255,211,79,.4);
+  animation:athStarTwinkle 2.8s ease-in-out infinite;
+}
+.ath-spark.diamond{
+  width:16px;height:16px;border-radius:3px;
+  background:linear-gradient(135deg,#ff9bea,#c33bff);
+  box-shadow:0 0 12px rgba(234,98,220,.65);
+  transform:rotate(45deg);
+  animation:athDiamondTwinkle 2.8s ease-in-out infinite;
+}
+.ath-spark.diamond-sm{width:11px;height:11px}
+.ath-spark.sp1{left:13%;top:66%;animation-delay:.05s}
+.ath-spark.sp2{right:12%;top:51%;font-size:24px;animation-delay:.6s}
+.ath-spark.sp3{right:9%;top:69%;animation-delay:1.15s}
+
+@keyframes athStarTwinkle{
+  0%{opacity:0;transform:scale(.3) rotate(0deg)}
+  25%{opacity:1;transform:scale(1.15) rotate(14deg)}
+  50%{opacity:.45;transform:scale(.78) rotate(-8deg)}
+  75%{opacity:1;transform:scale(1.08) rotate(9deg)}
+  100%{opacity:.7;transform:scale(.9) rotate(0deg)}
+}
+@keyframes athDiamondTwinkle{
+  0%{opacity:0;transform:rotate(45deg) scale(.3)}
+  25%{opacity:1;transform:rotate(45deg) scale(1.2)}
+  50%{opacity:.45;transform:rotate(45deg) scale(.8)}
+  75%{opacity:1;transform:rotate(45deg) scale(1.08)}
+  100%{opacity:.75;transform:rotate(45deg) scale(1)}
+}
+@media(prefers-reduced-motion:reduce){
+  .ath-spark{animation:none!important;opacity:.85!important}
 }
 .premium-athlete-image img{
   display:block;

@@ -1,4 +1,4 @@
-CholScore v0.9.2 - Premium workout completion screen
+CholScore v0.9.9 - Animated sparkle overlay on workout completion screen
 
 # CholScore v0.8.5 — Cache + Delete Hotfix
 
@@ -38,3 +38,16 @@ No new features.
 - Cancelling discards only the unfinished workout; the saved routine remains unchanged.
 - Cancelled workouts are not written to History.
 - service-worker cache version bumped to `cholscore-v091`.
+
+## v0.9.9 animated sparkle overlay
+- The confetti diamond and stars in `workout-victory-silhouette.png` are baked into the
+  flat artwork, so they can't be animated directly — instead a lightweight, purely CSS
+  sparkle layer (`.athlete-sparkle-overlay`) sits on top of the image, positioned over
+  the artwork's existing diamond and star accents.
+- Sparkles twinkle (scale + opacity + a little rotation) on a staggered loop, using
+  colours matched to the artwork (pink/magenta diamond, warm gold/white stars).
+- Because `<dialog>` is `display:none` while closed, the CSS animation restarts fresh
+  every time the workout completion screen is shown — no JS trigger needed.
+- Respects `prefers-reduced-motion`: sparkles show statically instead of animating.
+- `index.html`, `styles.css`, and the image cache-busting query strings bumped to `v099`.
+- service-worker cache version bumped to `cholscore-v099`.
