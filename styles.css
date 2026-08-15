@@ -159,6 +159,21 @@ input:focus,select:focus{border-color:rgba(84,217,255,.6);box-shadow:0 0 0 3px r
 .day-cell.muted{opacity:.2}.day-cell.has-data{border-color:rgba(85,240,167,.25)}
 .day-cell.has-data:after{content:"";width:5px;height:5px;border-radius:50%;background:var(--green);position:absolute;bottom:6px}
 .day-cell.selected{background:#233044;border-color:var(--cyan)}
+/* v1.4.0 — days with any exercise logged (workout/walk/run/one-off) get a
+   pulsing ring instead of just the plain dot, so they're easy to spot at a
+   glance on the month grid. */
+.day-cell.has-exercise{border-color:rgba(84,217,255,.4)}
+.day-cell.has-exercise::before{
+  content:"";position:absolute;inset:-3px;border-radius:14px;border:1.5px solid var(--cyan);
+  opacity:.7;animation:dayPulse 2.2s ease-out infinite;pointer-events:none;
+}
+.day-cell.has-exercise.has-data:after{background:var(--cyan)}
+@keyframes dayPulse{
+  0%{transform:scale(1);opacity:.7}
+  70%{transform:scale(1.28);opacity:0}
+  100%{transform:scale(1.28);opacity:0}
+}
+@media(prefers-reduced-motion:reduce){.day-cell.has-exercise::before{animation:none;opacity:.35}}
 .history-detail{margin-top:14px;padding:18px}
 .history-detail h3{margin:0 0 10px}
 .history-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
@@ -1154,3 +1169,140 @@ textarea:focus{border-color:rgba(84,217,255,.6);box-shadow:0 0 0 3px rgba(84,217
   .checkout-premium h2{font-size:25px}
 }
 
+
+/* ============================================================
+   v1.4.0 — full-screen Day Report ("sports report" theme).
+   Deliberately breaks from the rest of the app's dark navy/purple
+   scheme, per design brief — near-black background, single cyan
+   accent (matches the calendar's own --cyan so it still feels like
+   part of the same product), angled "broadcast graphics" dividers.
+   ============================================================ */
+:root{
+  --rep-bg:#050607;--rep-accent:#54d9ff;--rep-accent-dim:rgba(84,217,255,.16);--rep-ink:#f4f6ee;
+}
+.day-report-dialog{
+  position:fixed;inset:0;margin:0;width:100vw;height:100dvh;max-width:100vw;max-height:100dvh;
+  padding:0;border:none;border-radius:0;overflow:hidden;background:var(--rep-bg);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--rep-ink);
+}
+.day-report-dialog::backdrop{background:var(--rep-bg)}
+.rep-close{
+  position:absolute;top:16px;right:16px;z-index:10;width:40px;height:40px;border-radius:50%;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:#fff;
+  font-size:18px;display:grid;place-items:center;backdrop-filter:blur(6px);
+}
+.day-report-dialog .report-inner{
+  height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  transform:translateY(14px);opacity:0;transition:transform .5s cubic-bezier(.22,1,.36,1),opacity .45s ease;
+}
+.day-report-dialog.is-visible .report-inner{transform:translateY(0);opacity:1}
+
+.rep-hero{
+  position:relative;padding:64px 22px 34px;overflow:hidden;
+  background:
+    radial-gradient(120% 60% at 15% -20%, rgba(84,217,255,.14), transparent 55%),
+    radial-gradient(90% 50% at 100% 0%, rgba(168,121,255,.1), transparent 55%),
+    linear-gradient(180deg,#0b0d0e 0%, #050607 100%);
+}
+.rep-hero::after{
+  content:"";position:absolute;left:-10%;right:-10%;bottom:0;height:2px;
+  background:linear-gradient(90deg, transparent, var(--rep-accent), transparent);opacity:.6;
+}
+.rep-eyebrow{
+  font-size:11px;letter-spacing:.28em;font-weight:800;color:var(--rep-accent);text-transform:uppercase;
+  display:flex;align-items:center;gap:8px;
+}
+.rep-eyebrow::before{content:"";width:18px;height:2px;background:var(--rep-accent);display:inline-block;transform:skewX(-20deg)}
+.rep-date{
+  font-size:clamp(30px,9vw,42px);font-weight:900;letter-spacing:-.02em;line-height:1.02;margin:10px 0 2px;
+  text-transform:uppercase;color:var(--rep-ink);
+}
+.rep-date small{display:block;font-size:.42em;font-weight:700;color:#9aa8b8;letter-spacing:.1em;margin-top:4px}
+
+.rep-score-row{display:flex;align-items:flex-end;gap:18px;margin-top:26px;flex-wrap:wrap}
+.rep-score-box{
+  background:linear-gradient(155deg, rgba(84,217,255,.14), rgba(84,217,255,.02));
+  border:1px solid rgba(84,217,255,.32);border-radius:18px;padding:16px 22px;flex:1;min-width:150px;
+}
+.rep-score-box span{display:block;font-size:10px;letter-spacing:.16em;color:#9aa8b8;font-weight:800;text-transform:uppercase}
+.rep-score-num{font-size:56px;font-weight:900;color:var(--rep-accent);line-height:1;margin-top:4px;font-variant-numeric:tabular-nums}
+.rep-score-label{font-size:13px;font-weight:700;color:#c7e6ff;margin-top:4px}
+
+.rep-mini-stats{display:flex;flex-direction:column;gap:10px}
+.rep-mini-stats div{display:flex;justify-content:space-between;gap:14px;font-size:12.5px;color:#aab19a;min-width:120px}
+.rep-mini-stats strong{color:#fff;font-weight:800}
+
+.rep-section{padding:30px 22px;border-top:1px solid rgba(255,255,255,.06)}
+.rep-section-head{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.rep-section-bar{width:26px;height:12px;background:var(--rep-accent);transform:skewX(-20deg);flex:none}
+.rep-section-head h2{font-size:12px;letter-spacing:.2em;text-transform:uppercase;font-weight:900;margin:0;color:#e9ecdf}
+
+.rep-rings{display:flex;gap:14px}
+.rep-ring-card{flex:1;text-align:center}
+.rep-ring-wrap{position:relative;width:78px;height:78px;margin:0 auto}
+.rep-ring-wrap svg{width:78px;height:78px;transform:rotate(-90deg)}
+.rep-ring-track{fill:none;stroke:rgba(255,255,255,.08);stroke-width:7}
+.rep-ring-fill{fill:none;stroke-width:7;stroke-linecap:round;transition:stroke-dashoffset 1.1s cubic-bezier(.22,1,.36,1)}
+.rep-ring-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff}
+.rep-ring-label{font-size:10px;color:#8a93a8;margin-top:8px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+
+.rep-exercise-row{display:flex;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.rep-exercise-row:last-child{border-bottom:none}
+.rep-exercise-num{
+  width:26px;height:26px;border-radius:50%;border:1.5px solid rgba(84,217,255,.4);color:var(--rep-accent);
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex:none;
+}
+.rep-exercise-name{flex:1;font-size:14.5px;font-weight:700;color:#fff}
+.rep-exercise-meta{font-size:11.5px;color:#8a93a8;margin-top:2px}
+.rep-exercise-value{text-align:right;font-size:14px;font-weight:800;color:var(--rep-accent);font-variant-numeric:tabular-nums}
+.rep-exercise-value small{display:block;font-size:9.5px;color:#8a93a8;font-weight:600}
+
+.rep-cardio-row{
+  display:grid;grid-template-columns:28px 1fr auto auto auto;align-items:center;gap:12px;
+  padding:13px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px;
+}
+.rep-cardio-row:last-child{border-bottom:none}
+.rep-cardio-icon{font-size:16px}
+.rep-cardio-name{font-weight:700;color:#fff}
+.rep-cardio-col{text-align:right;font-variant-numeric:tabular-nums}
+.rep-cardio-col strong{display:block;font-size:13.5px;color:#fff}
+.rep-cardio-col small{display:block;font-size:9px;color:#8a93a8;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-top:1px}
+.rep-cardio-head{display:grid;grid-template-columns:28px 1fr auto auto auto;gap:12px;font-size:9px;letter-spacing:.08em;color:#6d7688;font-weight:800;text-transform:uppercase;padding-bottom:8px}
+.rep-cardio-head span:not(:first-child){text-align:right}
+
+.rep-protein-hero{
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;
+  background:rgba(84,217,255,.06);border:1px solid rgba(84,217,255,.24);border-radius:16px;
+  padding:16px 18px;margin-bottom:18px;
+}
+.rep-protein-hero span{font-size:10px;letter-spacing:.14em;color:#9aa8b8;font-weight:800;text-transform:uppercase;display:block}
+.rep-protein-hero strong{font-size:30px;color:var(--rep-accent);font-weight:900;font-variant-numeric:tabular-nums}
+.rep-satfat-bar-wrap{flex:1;max-width:150px}
+.rep-satfat-bar-track{height:7px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden}
+.rep-satfat-bar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--rep-accent),#8fc7ff);width:0%;transition:width 1s cubic-bezier(.22,1,.36,1)}
+.rep-satfat-bar-text{font-size:10.5px;color:#8a93a8;margin-top:5px;text-align:right}
+
+.rep-food-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:13px}
+.rep-food-row:last-child{border-bottom:none}
+.rep-food-name{font-weight:700;color:#fff}
+.rep-food-meal{font-size:10.5px;color:#8a93a8;text-transform:uppercase;letter-spacing:.05em;margin-top:1px}
+.rep-food-nums{text-align:right;font-size:11.5px;color:#aab19a;font-variant-numeric:tabular-nums}
+.rep-food-nums b{color:#fff;font-weight:800}
+
+.rep-empty{font-size:13px;color:#6d7688;font-style:italic;padding:6px 0}
+.rep-footer{padding:34px 22px 60px;text-align:center}
+.rep-footer-mark{font-size:11px;letter-spacing:.2em;color:#4d5568;font-weight:800;text-transform:uppercase}
+
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .6s ease,transform .6s cubic-bezier(.22,1,.36,1)}
+.reveal.in{opacity:1;transform:translateY(0)}
+
+@media(prefers-reduced-motion:reduce){
+  .day-report-dialog .report-inner{transition:none;transform:none;opacity:1}
+  .reveal{transition:none;opacity:1;transform:none}
+  .rep-ring-fill,.rep-satfat-bar-fill{transition:none}
+}
+@media(max-width:420px){
+  .rep-hero{padding:56px 18px 28px}
+  .rep-section{padding:24px 18px}
+  .rep-score-num{font-size:46px}
+}

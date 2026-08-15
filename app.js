@@ -556,9 +556,12 @@ function renderCalendar(){
   $("monthTitle").textContent=calendarDate.toLocaleDateString(undefined,{month:"long",year:"numeric"});
   const first=new Date(y,m,1),last=new Date(y,m+1,0),offset=(first.getDay()+6)%7,cells=[];
   for(let i=0;i<offset;i++)cells.push(`<button class="day-cell muted"></button>`);
-  for(let d=1;d<=last.getDate();d++){const key=`${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`,has=!!state.days[key];cells.push(`<button class="day-cell ${has?"has-data":""}" data-date="${key}">${d}</button>`);}
+  for(let d=1;d<=last.getDate();d++){
+    const key=`${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`,dayObj=state.days[key],has=!!dayObj,hasExercise=!!(dayObj?.activities?.length);
+    cells.push(`<button class="day-cell ${has?"has-data":""} ${hasExercise?"has-exercise":""}" data-date="${key}">${d}</button>`);
+  }
   $("calendarGrid").innerHTML=cells.join("");
-  qsa(".day-cell[data-date]").forEach(b=>b.addEventListener("click",()=>showHistoryDay(b.dataset.date,b)));
+  qsa(".day-cell[data-date]").forEach(b=>b.addEventListener("click",()=>{showHistoryDay(b.dataset.date,b);showDayReport(b.dataset.date);}));
 }
 function showHistoryDay(key,btn){
   qsa(".day-cell").forEach(x=>x.classList.remove("selected"));btn.classList.add("selected");
@@ -566,6 +569,138 @@ function showHistoryDay(key,btn){
   $("historyDetail").classList.remove("empty-state");
   $("historyDetail").innerHTML=`<h3>${nice}</h3><div class="history-grid"><div><span>Sat fat</span><strong>${fmt(t.sat)}g</strong></div><div><span>Movement</span><strong>${Math.round(t.mins)} min</strong></div><div><span>CholScore</span><strong>${sc}</strong></div></div><p style="color:#9299aa;font-size:12px;margin-bottom:0">${day.foods.length} food entries · ${day.activities.length} activities${day.checkedOut?" · checked out":""}</p>`;
 }
+
+/* v1.4.0 full-screen Day Report — a "sports report" style recap of one
+   whole day, built from the exact same data functions used everywhere
+   else (totals/scoreDay/exerciseVolume/formatActivityDuration/formatPace),
+   so it's guaranteed to agree with the rest of the app. */
+function repTrainingSectionHTML(workouts){
+  if(!workouts.length)return `<div class="rep-section reveal"><div class="rep-section-head"><div class="rep-section-bar"></div><h2>Strength Session</h2></div><p class="rep-empty">No training logged this day.</p></div>`;
+  return workouts.map(w=>{
+    const rows=(w.exercises||[]).map((ex,i)=>{
+      let meta,value,unit;
+      if(ex.timed){
+        const totalSec=(ex.sets||[]).reduce((sum,s)=>sum+Number(s.timedSeconds||s.actual||0),0);
+        meta=`${ex.sets.length} timed ${ex.sets.length===1?"set":"sets"}`;
+        value=formatExerciseSeconds(totalSec);unit="held";
+      }else{
+        const vol=exerciseVolume(ex);
+        meta=`${(ex.sets||[]).length} sets${ex.targetReps?` × ${ex.targetReps} reps`:""}`;
+        value=Number(vol)>0?fmt(vol):"—";unit="kg volume";
+      }
+      return `<div class="rep-exercise-row"><div class="rep-exercise-num">${i+1}</div><div><div class="rep-exercise-name">${esc(ex.name)}</div><div class="rep-exercise-meta">${esc(meta)}</div></div><div class="rep-exercise-value">${value}<small>${unit}</small></div></div>`;
+    }).join("");
+    return `<div class="rep-section reveal"><div class="rep-section-head"><div class="rep-section-bar"></div><h2>Strength Session · ${esc(w.name||"Workout")}</h2></div>${rows}</div>`;
+  }).join("");
+}
+function repCardioSectionHTML(cardio){
+  if(!cardio.length)return `<div class="rep-section reveal"><div class="rep-section-head"><div class="rep-section-bar"></div><h2>Cardio</h2></div><p class="rep-empty">No cardio logged this day.</p></div>`;
+  const unit=distanceUnit();
+  const rows=cardio.map(a=>{
+    const icon=a.type==="run"?"🏃":a.type==="walk"?"🚶":"⚡";
+    const displayDist=a.distance>0?Number(kmToDisplay(a.distance).toFixed(1)):0;
+    const pace=displayDist>0?formatPace(a.minutes,displayDist):null;
+    const label=a.name||(a.type==="run"?"Run":a.type==="walk"?"Walk":"Activity");
+    return `<div class="rep-cardio-row">
+      <div class="rep-cardio-icon">${icon}</div>
+      <div class="rep-cardio-name">${esc(label)}</div>
+      <div class="rep-cardio-col"><strong>${formatActivityDuration(a.minutes)}</strong><small>duration</small></div>
+      <div class="rep-cardio-col"><strong>${displayDist>0?`${displayDist} ${unit}`:"—"}</strong><small>distance</small></div>
+      <div class="rep-cardio-col"><strong>${pace||"—"}</strong><small>min/${unit}</small></div>
+    </div>`;
+  }).join("");
+  return `<div class="rep-section reveal"><div class="rep-section-head"><div class="rep-section-bar"></div><h2>Cardio</h2></div><div class="rep-cardio-head"><span></span><span>Activity</span><span>Time</span><span>Dist</span><span>Pace</span></div>${rows}</div>`;
+}
+function repNutritionSectionHTML(day,target){
+  const totalProtein=day.foods.reduce((a,b)=>a+Number(b.protein||0),0);
+  const totalSat=day.foods.reduce((a,b)=>a+Number(b.sat||0),0);
+  const satPct=target>0?Math.min(100,totalSat/target*100):0;
+  const foodRows=day.foods.length
+    ? day.foods.map(f=>`<div class="rep-food-row"><div><div class="rep-food-name">${esc(f.name||"Food")}</div><div class="rep-food-meal">${esc(f.meal||"")}</div></div><div class="rep-food-nums"><b>${fmt(f.sat)}g</b> sat fat · <b>${f.protein!=null?`${fmt(f.protein)}g`:"—"}</b> protein</div></div>`).join("")
+    : `<p class="rep-empty">No food logged this day.</p>`;
+  return `<div class="rep-section reveal">
+    <div class="rep-section-head"><div class="rep-section-bar"></div><h2>Nutrition</h2></div>
+    <div class="rep-protein-hero">
+      <div><span>Protein</span><strong>${fmt(totalProtein)}g</strong></div>
+      <div class="rep-satfat-bar-wrap">
+        <div class="rep-satfat-bar-track"><div class="rep-satfat-bar-fill" id="repSatBar"></div></div>
+        <div class="rep-satfat-bar-text">${fmt(totalSat)}g / ${fmt(target)}g sat fat</div>
+      </div>
+    </div>
+    ${foodRows}
+  </div>`;
+}
+function showDayReport(key){
+  const day=getDay(key),t=totals(day),target=Number(state.profile?.target||30);
+  const score=day.finalScore??scoreDay(day);
+  const dateObj=new Date(key+"T12:00:00");
+  const weekday=dateObj.toLocaleDateString(undefined,{weekday:"long"});
+  const niceDate=dateObj.toLocaleDateString(undefined,{day:"numeric",month:"long",year:"numeric"});
+  const workouts=(day.activities||[]).filter(a=>a.type==="workout");
+  const cardio=(day.activities||[]).filter(a=>a.type!=="workout");
+
+  $("dayReportInner").innerHTML=`
+    <div class="rep-hero">
+      <div class="rep-eyebrow">Daily Report</div>
+      <div class="rep-date">${esc(weekday)}<small>${esc(niceDate)}</small></div>
+      <div class="rep-score-row">
+        <div class="rep-score-box">
+          <span>CholScore</span>
+          <div class="rep-score-num" id="repScoreNum">0</div>
+          <div class="rep-score-label">${esc(scoreLabel(score))}</div>
+        </div>
+        <div class="rep-mini-stats">
+          <div><span>Sat fat</span><strong>${fmt(t.sat)}g</strong></div>
+          <div><span>Movement</span><strong>${Math.round(t.mins)} min</strong></div>
+          <div><span>Checked out</span><strong>${day.checkedOut?"Yes":"No"}</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rep-section reveal">
+      <div class="rep-section-head"><div class="rep-section-bar"></div><h2>Today's Rings</h2></div>
+      <div class="rep-rings">
+        <div class="rep-ring-card"><div class="rep-ring-wrap"><svg viewBox="0 0 78 78"><circle class="rep-ring-track" cx="39" cy="39" r="32"/><circle class="rep-ring-fill" id="repRingFat" cx="39" cy="39" r="32" stroke="var(--rep-accent)" stroke-dasharray="201.06" stroke-dashoffset="201.06"/></svg><div class="rep-ring-num">${fmt(t.sat)}g</div></div><div class="rep-ring-label">Sat fat</div></div>
+        <div class="rep-ring-card"><div class="rep-ring-wrap"><svg viewBox="0 0 78 78"><circle class="rep-ring-track" cx="39" cy="39" r="32"/><circle class="rep-ring-fill" id="repRingMins" cx="39" cy="39" r="32" stroke="var(--cyan)" stroke-dasharray="201.06" stroke-dashoffset="201.06"/></svg><div class="rep-ring-num">${Math.round(t.mins)}</div></div><div class="rep-ring-label">Minutes</div></div>
+        <div class="rep-ring-card"><div class="rep-ring-wrap"><svg viewBox="0 0 78 78"><circle class="rep-ring-track" cx="39" cy="39" r="32"/><circle class="rep-ring-fill" id="repRingScore" cx="39" cy="39" r="32" stroke="var(--violet)" stroke-dasharray="201.06" stroke-dashoffset="201.06"/></svg><div class="rep-ring-num">${score}</div></div><div class="rep-ring-label">Score</div></div>
+      </div>
+    </div>
+
+    ${repTrainingSectionHTML(workouts)}
+    ${repCardioSectionHTML(cardio)}
+    ${repNutritionSectionHTML(day,target)}
+
+    <div class="rep-footer reveal"><div class="rep-footer-mark">— End of report —</div></div>
+  `;
+
+  const dlg=$("dayReportDialog");
+  dlg.classList.remove("is-visible");
+  dlg.showModal();
+  requestAnimationFrame(()=>requestAnimationFrame(()=>dlg.classList.add("is-visible")));
+
+  const scoreEl=$("repScoreNum"),duration=900,startT=performance.now();
+  function frame(now){
+    const tt=Math.min(1,(now-startT)/duration),eased=1-Math.pow(1-tt,3);
+    scoreEl.textContent=Math.round(score*eased);
+    if(tt<1)requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  const CIRC_R=2*Math.PI*32;
+  const satPctRing=target>0?Math.min(1,t.sat/target):0,minsPctRing=Math.min(1,t.mins/45),scorePctRing=Math.min(1,score/100);
+  setTimeout(()=>{$("repRingFat").style.strokeDashoffset=CIRC_R*(1-satPctRing);},150);
+  setTimeout(()=>{$("repRingMins").style.strokeDashoffset=CIRC_R*(1-minsPctRing);},300);
+  setTimeout(()=>{$("repRingScore").style.strokeDashoffset=CIRC_R*(1-scorePctRing);},450);
+  const satBar=$("repSatBar");
+  if(satBar)setTimeout(()=>{satBar.style.width=`${target>0?Math.min(100,day.foods.reduce((a,b)=>a+Number(b.sat||0),0)/target*100):0}%`;},200);
+
+  const io=new IntersectionObserver(entries=>{
+    entries.forEach(en=>{if(en.isIntersecting)en.target.classList.add("in");});
+  },{threshold:.15});
+  qsa(".reveal",$("dayReportInner")).forEach(el=>io.observe(el));
+}
+$("dayReportClose").addEventListener("click",()=>$("dayReportDialog").close());
+$("dayReportDialog").addEventListener("close",()=>$("dayReportDialog").classList.remove("is-visible"));
 
 /* Onboarding */
 qsa(".target-option").forEach(btn=>btn.addEventListener("click",()=>{

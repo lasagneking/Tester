@@ -10,7 +10,7 @@
   <meta name="application-name" content="CholScore" />
   <title>CholScore</title>
   <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="styles.css?v=112" />
+  <link rel="stylesheet" href="styles.css?v=113" />
 </head>
 <body>
   <div id="app">
@@ -392,7 +392,7 @@
     <p id="finishWorkoutSummary" class="workout-celebration-message premium-subtitle"></p>
 
     <div class="premium-athlete premium-athlete-image" aria-hidden="true">
-      <img src="workout-victory-silhouette.png?v=112" alt="" />
+      <img src="workout-victory-silhouette.png?v=113" alt="" />
     </div>
 
     <div class="workout-result-grid premium-result-grid">
@@ -677,8 +677,13 @@
     </form>
   </dialog>
 
+  <dialog id="dayReportDialog" class="day-report-dialog">
+    <button id="dayReportClose" class="rep-close" aria-label="Close report">✕</button>
+    <div id="dayReportInner" class="report-inner"></div>
+  </dialog>
+
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <script src="app.js?v=112"></script>
+  <script src="app.js?v=113"></script>
 
   <script>
     if ("serviceWorker" in navigator) {

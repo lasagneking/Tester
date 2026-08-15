@@ -1,4 +1,4 @@
-CholScore v1.3.0 - Gold-medal completion card for quick walk/run logging
+CholScore v1.4.0 - Full-screen sports-report Day Report + pulsing exercise days
 
 # CholScore v0.8.5 — Cache + Delete Hotfix
 
@@ -38,6 +38,38 @@ No new features.
 - Cancelling discards only the unfinished workout; the saved routine remains unchanged.
 - Cancelled workouts are not written to History.
 - service-worker cache version bumped to `cholscore-v091`.
+
+## v1.4.0 Day Report + pulsing exercise days
+- Tapping any date on the History calendar (past or present) now opens a full-screen
+  Day Report — a "sports report" style recap, matching the approved mockup.
+  Deliberately breaks from the rest of the app's dark navy/purple scheme on purpose:
+  near-black background, a single cyan accent (matches the calendar's own `--cyan` so
+  it still feels part of the same product), angled broadcast-graphics style dividers.
+- Sections: date hero with a scoreboard-style CholScore readout (counts up on open),
+  a Rings recap (sat fat/minutes/score, same draw-in animation as elsewhere), Strength
+  Session (numbered like a team sheet — sets/reps/volume, or time held for timed
+  exercises, one section per workout logged that day), Cardio (results-table style:
+  time/distance/pace per walk or run), and Nutrition (protein as the hero stat, a
+  sat-fat progress bar, then the full food list — no images, as asked). Empty
+  sections show a quiet "No X logged this day" line rather than being hidden, so the
+  report always reads as complete.
+- Sections cascade in as you scroll (IntersectionObserver-driven fade/slide), rather
+  than all appearing at once.
+- Implemented as a genuine full-viewport `<dialog>` (not a small modal), so it gets
+  Esc-to-close and top-layer stacking for free, consistent with how every other
+  overlay in the app works.
+- Built entirely from existing data functions (`totals`, `scoreDay`, `exerciseVolume`,
+  `formatActivityDuration`, `formatPace`, `distanceUnit`/`kmToDisplay`) — verified
+  against real sample data (workout + walk + food day, and an empty day) before
+  shipping, so the report is guaranteed to agree with the rest of the app rather than
+  recalculating things its own way.
+- Calendar days with any exercise logged (workout, walk, run, or one-off) now get a
+  pulsing cyan ring instead of just the plain dot, so active days are easy to spot at
+  a glance across a whole month.
+- Respects `prefers-reduced-motion` throughout (report entrance, ring fills, section
+  reveals, and the calendar pulse all disable cleanly).
+- `index.html`, `styles.css`, and the image cache-busting query strings bumped to `v113`.
+- service-worker cache version bumped to `cholscore-v113`.
 
 ## v1.3.0 walk/run completion card
 - Replaced the native browser `alert()` ("Great work, Bill! 125 minutes completed.")
