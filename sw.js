@@ -1,4 +1,4 @@
-const CACHE = "cholscore-v090";
+const CACHE = "cholscore-v098";
 
 const APP_SHELL = [
   "./",
@@ -8,7 +8,8 @@ const APP_SHELL = [
   "./manifest.json",
   "./icon-192.png",
   "./icon-512.png",
-  "./apple-touch-icon.png"
+  "./apple-touch-icon.png",
+  "./workout-victory-silhouette.png"
 ];
 
 self.addEventListener("install", event => {

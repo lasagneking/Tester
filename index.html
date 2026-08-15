@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#0a0d14" />
+  <meta name="theme-color" content="#0b0d12" />
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="application-name" content="CholScore" />
   <title>CholScore</title>
   <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="styles.css?v=090" />
+  <link rel="stylesheet" href="styles.css?v=098" />
 </head>
 <body>
   <div id="app">
@@ -67,9 +67,6 @@
 
       <section id="todayView" class="view active">
         <div class="hero-card">
-          <svg class="hero-pulse-line" viewBox="0 0 400 46" preserveAspectRatio="none" aria-hidden="true">
-            <path d="M0 23 L100 23 L114 6 L128 40 L142 23 L156 23 L400 23" />
-          </svg>
           <div>
             <p id="heroMessage" class="hero-message">You're building a better day.</p>
             <h3>Today's progress</h3>
@@ -261,7 +258,6 @@
       </section>
 
       <nav class="bottom-nav">
-        <div class="nav-pill" id="navPill"></div>
         <button class="nav-btn active" data-view="todayView"><span>◉</span><small>Today</small></button>
         <button class="nav-btn" data-view="foodView"><span>⌁</span><small>Food</small></button>
         <button class="nav-btn" data-view="exerciseView"><span>↗</span><small>Exercise</small></button>
@@ -337,11 +333,11 @@
         <button id="minimiseWorkoutBtn" class="profile-pill" aria-label="Minimise workout">—</button>
       </div>
 
-      <div class="live-hint">Enter what you actually complete. Your saved routine stays unchanged.</div>
+      <div id="workoutProgress" class="guided-progress"></div>
       <div id="liveExerciseList" class="live-exercise-list"></div>
 
       <button id="addRandomExerciseBtn" class="random-exercise-btn">+ Add a random exercise</button>
-      <button id="finishWorkoutBtn" class="finish-workout-btn">Finish workout</button>
+      <button id="cancelWorkoutBtn" class="cancel-workout-btn">Cancel workout</button>
     </div>
   </dialog>
 
@@ -353,24 +349,64 @@
         <label>Sets<input id="randomExerciseSets" type="number" min="1" max="20" value="3" required /></label>
         <label>Target reps<input id="randomExerciseReps" type="number" min="1" max="200" value="10" required /></label>
       </div>
+      <label>Weight (kg, optional)<input id="randomExerciseWeight" type="number" min="0" step="0.5" placeholder="e.g. 15" /></label>
+      <label>Exercise notes (optional)<textarea id="randomExerciseNotes" rows="3" placeholder="e.g. Keep feet wider, slow on the way down"></textarea></label>
       <p class="modal-note">This adds it to the current workout only. Your saved routine won't be changed.</p>
       <button class="primary-btn" value="default">Add to workout</button><button type="button" class="cancel-btn" data-close-dialog="randomExerciseDialog">Cancel</button>
     </form>
   </dialog>
 
-  <dialog id="finishFeelingDialog" class="modal celebration">
+  <dialog id="exerciseCompleteDialog" class="modal exercise-complete-modal celebration">
+    <div class="celebration-sparkles" aria-hidden="true">✦ · ✧ · ✦</div>
     <div class="celebrate-icon">💪</div>
-    <h2 id="finishFeelingTitle">Workout complete</h2>
-    <p id="finishWorkoutSummary"></p>
-    <label>How did the workout feel?</label>
-    <div class="feeling-row finish-feeling-row">
-      <button type="button" data-finish-feel="1">😣</button>
-      <button type="button" data-finish-feel="2">😕</button>
-      <button type="button" data-finish-feel="3" class="selected">😐</button>
-      <button type="button" data-finish-feel="4">🙂</button>
-      <button type="button" data-finish-feel="5">😄</button>
+    <p class="eyebrow">EXERCISE COMPLETE</p>
+    <h2 id="exerciseCompleteTitle">Brilliant work!</h2>
+    <p id="exerciseCompleteMessage"></p>
+    <div id="exerciseCompleteStats" class="exercise-complete-stats"></div>
+    <button id="nextExerciseBtn" class="primary-btn">Next exercise</button>
+  </dialog>
+
+  <dialog id="finishFeelingDialog" class="modal workout-celebration celebration premium-workout-result">
+    <div class="premium-confetti" aria-hidden="true">
+      <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
     </div>
-    <button id="saveFinishedWorkout" class="primary-btn">Save workout</button>
+    <div class="premium-star" aria-hidden="true">★</div>
+    <p class="eyebrow premium-complete-label">WORKOUT COMPLETE</p>
+    <h2 id="finishFeelingTitle">Amazing work!</h2>
+    <p id="finishWorkoutSummary" class="workout-celebration-message premium-subtitle"></p>
+
+    <div class="premium-athlete premium-athlete-image" aria-hidden="true">
+      <img src="workout-victory-silhouette.png?v=098" alt="" />
+    </div>
+
+    <div class="workout-result-grid premium-result-grid">
+      <div class="premium-stat-card">
+        <div class="premium-stat-icon">🏋️</div>
+        <span>TOTAL WEIGHT LIFTED</span>
+        <strong id="finishTotalWeight">0 kg</strong>
+        <small>That's serious strength! 💪</small>
+      </div>
+      <div class="premium-stat-card">
+        <div class="premium-stat-icon">◷</div>
+        <span>WORKOUT DURATION</span>
+        <strong id="finishWorkoutDuration">0 min</strong>
+        <small>Great focus and dedication! ⭐</small>
+      </div>
+    </div>
+
+    <div class="premium-motivation"><b>♡</b><span>Every rep brings you closer to<br><strong>a stronger, healthier you.</strong> ✨</span></div>
+
+    <div class="premium-feeling-panel">
+      <label>How did the workout feel?</label>
+      <div class="feeling-row finish-feeling-row">
+        <button type="button" data-finish-feel="1">😣</button>
+        <button type="button" data-finish-feel="2">😕</button>
+        <button type="button" data-finish-feel="3" class="selected">😐</button>
+        <button type="button" data-finish-feel="4">🙂</button>
+        <button type="button" data-finish-feel="5">😄</button>
+      </div>
+    </div>
+    <button id="saveFinishedWorkout" class="premium-done-btn"><span>🎉</span><b>Done!</b><small>Save workout</small></button>
   </dialog>
 
   
@@ -577,7 +613,7 @@
   </dialog>
 
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <script src="app.js?v=090"></script>
+  <script src="app.js?v=098"></script>
 
   <script>
     if ("serviceWorker" in navigator) {

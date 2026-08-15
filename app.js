@@ -18,6 +18,8 @@ let selectedFeeling = 3;
 let finishFeeling = 3;
 let calendarDate = new Date();
 let workoutTimer = null;
+let timedSetTimer = null;
+let timedCountdownTimer = null;
 let barcodeScanner = null;
 let currentProduct = null;
 let scannerPurpose = "add";
@@ -107,6 +109,15 @@ function minutesBetween(start,finish){
 }
 function elapsedMinutes(startedAt,endedAt=Date.now()){
   return Math.max(0,Math.round((endedAt-new Date(startedAt).getTime())/60000));
+}
+function formatExerciseSeconds(total){
+  const sec=Math.max(0,Math.round(Number(total||0)));
+  const m=Math.floor(sec/60),s=sec%60;
+  return m?`${m}:${String(s).padStart(2,"0")}`:`${s}s`;
+}
+function clearTimedSetTimers(){
+  clearInterval(timedSetTimer);timedSetTimer=null;
+  clearInterval(timedCountdownTimer);timedCountdownTimer=null;
 }
 function elapsedClock(startedAt){
   const sec=Math.max(0,Math.floor((Date.now()-new Date(startedAt).getTime())/1000));
@@ -314,7 +325,7 @@ function renderRoutines(){
     return;
   }
   $("routineList").innerHTML=state.routines.map(r=>{
-    const preview=r.exercises.slice(0,4).map(e=>`<span class="routine-chip">${esc(e.name)} · ${e.sets}×${e.reps}</span>`).join("");
+    const preview=r.exercises.slice(0,4).map(e=>`<span class="routine-chip">${esc(e.name)} · ${e.sets} ${e.timed?"timed sets":`×${e.reps}`}${Number(e.weight)>0?` · ${fmt(e.weight)}kg`:""}</span>`).join("");
     return `<div class="routine-card" data-edit-routine="${r.id}">
       <div class="routine-card-top"><div><h4>${esc(r.name)}</h4><p>${r.exercises.length} ${r.exercises.length===1?"exercise":"exercises"}</p></div></div>
       <div class="routine-preview">${preview}${r.exercises.length>4?`<span class="routine-chip">+${r.exercises.length-4} more</span>`:""}</div>
@@ -575,19 +586,10 @@ $("finishSetup").addEventListener("click",()=>{
 });
 
 /* Navigation */
-function positionNavPill(){
-  const pill=$("navPill"),active=document.querySelector(".nav-btn.active");
-  if(!pill||!active)return;
-  const i=qsa(".nav-btn").indexOf(active);
-  pill.style.transform=`translateX(${i*100}%)`;
-}
 qsa(".nav-btn").forEach(btn=>btn.addEventListener("click",()=>{
   qsa(".nav-btn").forEach(x=>x.classList.remove("active"));btn.classList.add("active");
   qsa(".view").forEach(x=>x.classList.remove("active"));$(btn.dataset.view).classList.add("active");renderAll();
-  positionNavPill();
 }));
-window.addEventListener("load",positionNavPill);
-window.addEventListener("resize",positionNavPill);
 
 
 /* Friendly cancel behaviour — never validate when the user just wants to leave */
@@ -972,10 +974,31 @@ $("manualFoodFromNotFound").addEventListener("click",()=>{
 
 
 /* Routine builder */
-function addRoutineExerciseRow(data={name:"",sets:3,reps:10,id:""}){
+function addRoutineExerciseRow(data={name:"",sets:3,reps:10,weight:"",notes:"",id:"",timed:false}){
   const row=document.createElement("div");row.className="routine-exercise-row";
   if(data.id) row.dataset.exerciseId=data.id;
-  row.innerHTML=`<label>Exercise<input class="rb-name" required placeholder="e.g. Bench press" value="${esc(data.name)}"></label><label>Sets<input class="rb-sets" type="number" min="1" max="20" value="${Number(data.sets)||3}" required></label><label>Reps<input class="rb-reps" type="number" min="1" max="200" value="${Number(data.reps)||10}" required></label><button type="button" class="row-remove">×</button>`;
+  const isTimed=Boolean(data.timed);
+  row.innerHTML=`
+    <div class="rb-main-fields">
+      <label>Exercise<input class="rb-name" required placeholder="e.g. Bench press or Plank" value="${esc(data.name)}"></label>
+      <label class="timed-exercise-toggle">
+        <input class="rb-timed" type="checkbox" ${isTimed?"checked":""}>
+        <span><b>⏱ Timed exercise</b><small>Use a stopwatch for each set instead of entering reps.</small></span>
+      </label>
+      <div class="rb-number-grid">
+        <label>Sets<input class="rb-sets" type="number" min="1" max="20" value="${Number(data.sets)||3}" required></label>
+        <label class="rb-reps-label">Reps<input class="rb-reps" type="number" min="1" max="200" value="${Number(data.reps)||10}" ${isTimed?"disabled":""}></label>
+        <label>Weight (kg)<input class="rb-weight" type="number" min="0" step="0.5" placeholder="Optional" value="${Number(data.weight)>0?Number(data.weight):""}"></label>
+      </div>
+      <label>Exercise notes<textarea class="rb-notes" rows="2" placeholder="Optional cue or reminder">${esc(data.notes||"")}</textarea></label>
+    </div>
+    <button type="button" class="row-remove" aria-label="Remove exercise">×</button>`;
+  const timed=row.querySelector(".rb-timed"),reps=row.querySelector(".rb-reps"),repsLabel=row.querySelector(".rb-reps-label");
+  const syncTimed=()=>{
+    reps.disabled=timed.checked;
+    repsLabel.classList.toggle("timed-disabled",timed.checked);
+  };
+  timed.addEventListener("change",syncTimed);syncTimed();
   row.querySelector(".row-remove").addEventListener("click",()=>row.remove());
   $("routineExerciseRows").appendChild(row);
 }
@@ -1007,12 +1030,18 @@ $("addRoutineExercise").addEventListener("click",()=>addRoutineExerciseRow());
 $("routineForm").addEventListener("submit",e=>{
   e.preventDefault();
   const name=$("routineName").value.trim();
-  const exercises=qsa(".routine-exercise-row").map(row=>({
-    id:row.dataset.exerciseId||id(),
-    name:row.querySelector(".rb-name").value.trim(),
-    sets:Number(row.querySelector(".rb-sets").value),
-    reps:Number(row.querySelector(".rb-reps").value)
-  })).filter(x=>x.name&&x.sets>0&&x.reps>0);
+  const exercises=qsa(".routine-exercise-row").map(row=>{
+    const timed=row.querySelector(".rb-timed").checked;
+    return {
+      id:row.dataset.exerciseId||id(),
+      name:row.querySelector(".rb-name").value.trim(),
+      sets:Number(row.querySelector(".rb-sets").value),
+      reps:timed?0:Number(row.querySelector(".rb-reps").value),
+      weight:Number(row.querySelector(".rb-weight").value||0),
+      notes:row.querySelector(".rb-notes").value.trim(),
+      timed
+    };
+  }).filter(x=>x.name&&x.sets>0&&(x.timed||x.reps>0));
 
   if(!name)return alert("Give your routine a name.");
   if(!exercises.length)return alert("Add at least one exercise.");
@@ -1039,20 +1068,89 @@ function deleteRoutine(rid){
 }
 
 /* Live workouts */
+const exerciseCheers=[
+  "Brilliant work",
+  "You nailed that one",
+  "Strong work",
+  "That is another one done",
+  "Excellent effort",
+  "Great job — keep it moving"
+];
+const workoutCheers=[
+  "Amazing work",
+  "Outstanding effort",
+  "Brilliant session",
+  "What a workout",
+  "Superb work",
+  "Fantastic effort"
+];
+const workoutSubCheers=[
+  "You smashed that workout! 💪",
+  "That was seriously strong work! ⭐",
+  "Another brilliant workout in the bank! 🎉",
+  "You brought the effort today! 💪",
+  "That session absolutely counted! ✨",
+  "Strong, focused and finished! ⭐"
+];
+function randomFrom(items){return items[Math.floor(Math.random()*items.length)];}
+function routineExerciseForWorkoutExercise(w,e){
+  const routine=state.routines.find(r=>r.id===w?.routineId);
+  if(!routine)return null;
+  return routine.exercises.find(x=>x.id===e?.sourceExerciseId)
+    || routine.exercises.find(x=>String(x.name||"").trim().toLowerCase()===String(e?.name||"").trim().toLowerCase())
+    || null;
+}
+function resolvedWorkoutWeight(w,e){
+  const direct=Number(e?.weight||0);
+  if(direct>0)return direct;
+  const source=routineExerciseForWorkoutExercise(w,e);
+  const fallback=Number(source?.weight||0);
+  return fallback>0?fallback:0;
+}
+function ensureWorkoutShape(w){
+  if(!w)return;
+  if(!Number.isInteger(w.currentExerciseIndex)) w.currentExerciseIndex=0;
+  w.exercises=(w.exercises||[]).map(e=>{
+    const weight=resolvedWorkoutWeight(w,e);
+    return {
+      ...e,weight,notes:e.notes||"",timed:Boolean(e.timed),exerciseComplete:Boolean(e.exerciseComplete),
+      sets:(e.sets||[]).map(set=>({
+        ...set,actual:set.actual??"",timedSeconds:Number(set.timedSeconds||0),timerStartedAt:set.timerStartedAt||null,
+        completed:typeof set.completed==="boolean"?set.completed:String(set.actual??"").trim()!==""
+      }))
+    };
+  });
+  w.currentExerciseIndex=Math.max(0,Math.min(w.currentExerciseIndex,Math.max(0,w.exercises.length-1)));
+}
+function exerciseVolume(e,w=null){
+  const weight=w?resolvedWorkoutWeight(w,e):Number(e?.weight||0);
+  if(weight<=0)return 0;
+  return (e.sets||[]).reduce((sum,set)=>{
+    const reps=Number(set.actual||0);
+    return sum+((set.completed||String(set.actual??"").trim()!=="")&&reps>0?reps*weight:0);
+  },0);
+}
+function workoutVolume(w){
+  if(!w)return 0;
+  ensureWorkoutShape(w);
+  return (w.exercises||[]).reduce((sum,e)=>sum+exerciseVolume(e,w),0);
+}
+function allSetsComplete(e){return Boolean(e?.sets?.length)&&e.sets.every(s=>s.completed&&(e.timed?Number(s.timedSeconds||s.actual||0)>0:String(s.actual).trim()!==""));}
 function startRoutine(rid){
   if(state.activeWorkout){alert("You already have a workout in progress. Finish or continue that workout first.");return;}
   const r=state.routines.find(x=>x.id===rid);if(!r)return;
   state.activeWorkout={
-    id:id(),routineId:r.id,name:r.name,startedAt:new Date().toISOString(),
+    id:id(),routineId:r.id,name:r.name,startedAt:new Date().toISOString(),currentExerciseIndex:0,
     exercises:r.exercises.map(e=>({
-      id:id(),sourceExerciseId:e.id,name:e.name,targetReps:e.reps,random:false,
-      sets:Array.from({length:e.sets},()=>({actual:""}))
+      id:id(),sourceExerciseId:e.id,name:e.name,targetReps:e.reps,weight:Number(e.weight||0),notes:e.notes||"",timed:Boolean(e.timed),random:false,exerciseComplete:false,
+      sets:Array.from({length:e.sets},()=>({actual:"",timedSeconds:0,timerStartedAt:null,completed:false}))
     }))
   };
   saveState();openWorkout();
 }
 function openWorkout(){
   if(!state.activeWorkout)return;
+  ensureWorkoutShape(state.activeWorkout);saveState();
   $("liveWorkoutTitle").textContent=state.activeWorkout.name;renderLiveExercises();
   $("workoutDialog").showModal();startWorkoutTimer();
 }
@@ -1066,35 +1164,178 @@ function startWorkoutTimer(){
   tick();workoutTimer=setInterval(tick,1000);
 }
 function renderLiveExercises(){
-  const w=state.activeWorkout;if(!w)return;
-  $("liveExerciseList").innerHTML=w.exercises.map((e,ei)=>`
-    <div class="live-exercise-card">
-      <div class="live-exercise-head"><div><h4>${ei+1}. ${esc(e.name)}</h4><span>Target ${e.targetReps} reps per set ${e.random?`· <b class="random-tag">added today</b>`:""}</span></div></div>
-      <div class="set-grid">${e.sets.map((s,si)=>`<div class="set-box"><label>SET ${si+1}<input inputmode="numeric" type="number" min="0" max="999" placeholder="${e.targetReps}" value="${s.actual}" data-workout-ex="${ei}" data-workout-set="${si}"></label></div>`).join("")}</div>
-    </div>`).join("");
-  qsa("[data-workout-ex]").forEach(inp=>inp.addEventListener("input",()=>{
-    const ei=Number(inp.dataset.workoutEx),si=Number(inp.dataset.workoutSet);
-    if(state.activeWorkout?.exercises?.[ei]?.sets?.[si]){state.activeWorkout.exercises[ei].sets[si].actual=inp.value;saveState();}
-  }));
+  const w=state.activeWorkout;if(!w)return;ensureWorkoutShape(w);
+  const ei=w.currentExerciseIndex||0,e=w.exercises[ei];
+  if(!e){showWorkoutCelebration();return;}
+  clearTimedSetTimers();
+  const done=e.sets.filter(s=>s.completed).length;
+  $("workoutProgress").innerHTML=`<div><span>EXERCISE ${ei+1} OF ${w.exercises.length}</span><strong>${done}/${e.sets.length} sets complete</strong></div><div class="guided-progress-bar"><i style="width:${(done/e.sets.length)*100}%"></i></div>`;
+  const descriptor=e.timed?`Timed exercise · ${e.sets.length} ${e.sets.length===1?"set":"sets"}`:`${e.targetReps} target reps per set${Number(e.weight)>0?` · <b>${fmt(e.weight)} kg</b>`:""}`;
+  const setMarkup=e.timed
+    ? e.sets.map((set,si)=>`
+        <div class="guided-set-row timed-set-row ${set.completed?"is-complete":""}" data-timed-row="${si}">
+          <span>SET ${si+1}</span>
+          <div class="timed-set-controls">
+            <strong class="timed-set-display" data-timed-display="${si}">${set.completed?formatExerciseSeconds(set.timedSeconds||set.actual):"Ready"}</strong>
+            <button type="button" class="timed-set-btn ${set.timerStartedAt?"is-running":""}" data-timed-set="${si}" ${set.completed?"disabled":""}>${set.timerStartedAt?"Stop":"⏱ Start"}</button>
+            <b class="set-tick" aria-label="${set.completed?"Complete":"Not complete"}">${set.completed?"✓":""}</b>
+          </div>
+        </div>`).join("")
+    : e.sets.map((set,si)=>`
+        <label class="guided-set-row ${set.completed?"is-complete":""}">
+          <span>SET ${si+1}</span>
+          <div class="guided-rep-entry">
+            <input inputmode="numeric" type="number" min="0" max="999" placeholder="${e.targetReps}" value="${esc(set.actual)}" data-workout-set="${si}" aria-label="Set ${si+1} reps">
+            <b class="set-tick" aria-label="${set.completed?"Complete":"Not complete"}">${set.completed?"✓":""}</b>
+          </div>
+        </label>`).join("");
+
+  $("liveExerciseList").innerHTML=`
+    <div class="guided-exercise-card">
+      <div class="guided-exercise-heading">
+        <span class="guided-count">${String(ei+1).padStart(2,"0")}</span>
+        <div><p class="eyebrow">CURRENT EXERCISE</p><h3>${esc(e.name)}</h3><p>${descriptor}${e.random?` · <b class="random-tag">added today</b>`:""}</p></div>
+      </div>
+      ${e.notes?`<div class="exercise-note"><span>NOTE</span>${esc(e.notes)}</div>`:""}
+      <div class="guided-set-list">${setMarkup}</div>
+      <p class="enter-hint">${e.timed?"Tap Start for a 3–2–1 countdown. The stopwatch runs until you press Stop.":"Enter your reps, then press Enter / Done to tick off each set."}</p>
+      <button id="completeCurrentExerciseBtn" class="complete-exercise-btn" ${allSetsComplete(e)?"":"disabled"}>Complete exercise</button>
+    </div>`;
+
+  if(e.timed){
+    // If the app was re-rendered while a timed set was running, resume its live display.
+    const runningIndex=e.sets.findIndex(s=>s.timerStartedAt&&!s.completed);
+    if(runningIndex>=0) resumeTimedSet(ei,runningIndex);
+    qsa("[data-timed-set]").forEach(btn=>btn.addEventListener("click",()=>handleTimedSet(ei,Number(btn.dataset.timedSet))));
+  }else{
+    qsa("[data-workout-set]").forEach(inp=>{
+      inp.addEventListener("input",()=>{
+        const si=Number(inp.dataset.workoutSet),set=state.activeWorkout?.exercises?.[ei]?.sets?.[si];
+        if(!set)return;set.actual=inp.value;set.completed=false;saveState();
+        const row=inp.closest(".guided-set-row");row?.classList.remove("is-complete");const tick=row?.querySelector(".set-tick");if(tick)tick.textContent="";
+        const btn=$("completeCurrentExerciseBtn");if(btn)btn.disabled=true;
+      });
+      const markComplete=()=>{
+        if(String(inp.value).trim()==="")return;
+        const si=Number(inp.dataset.workoutSet),set=state.activeWorkout?.exercises?.[ei]?.sets?.[si];if(!set)return;
+        set.actual=inp.value;set.completed=true;saveState();renderLiveExercises();
+        const next=qsa("[data-workout-set]").find(x=>Number(x.dataset.workoutSet)>si&&!state.activeWorkout.exercises[ei].sets[Number(x.dataset.workoutSet)].completed);
+        if(next) setTimeout(()=>next.focus(),0);
+      };
+      inp.addEventListener("keydown",ev=>{if(ev.key==="Enter"){ev.preventDefault();markComplete();}});
+      inp.addEventListener("change",markComplete);
+    });
+  }
+  $("completeCurrentExerciseBtn")?.addEventListener("click",completeCurrentExercise);
+}
+function handleTimedSet(ei,si){
+  const w=state.activeWorkout,e=w?.exercises?.[ei],set=e?.sets?.[si];if(!set||set.completed)return;
+  if(set.timerStartedAt){stopTimedSet(ei,si);return;}
+  // Only one stopwatch can run at a time.
+  const other=e.sets.findIndex((s,i)=>i!==si&&s.timerStartedAt&&!s.completed);
+  if(other>=0)return;
+
+  clearTimedSetTimers();
+  const btn=document.querySelector(`[data-timed-set="${si}"]`);
+  const display=document.querySelector(`[data-timed-display="${si}"]`);
+  if(btn)btn.disabled=true;
+  let count=3;
+  if(display)display.textContent=count;
+  timedCountdownTimer=setInterval(()=>{
+    count-=1;
+    if(count>0){if(display)display.textContent=count;return;}
+    clearInterval(timedCountdownTimer);timedCountdownTimer=null;
+    set.timerStartedAt=new Date().toISOString();set.timedSeconds=0;set.actual="";saveState();
+    if(btn){btn.disabled=false;btn.textContent="Stop";btn.classList.add("is-running");}
+    resumeTimedSet(ei,si);
+  },1000);
+}
+function resumeTimedSet(ei,si){
+  clearInterval(timedSetTimer);
+  const set=state.activeWorkout?.exercises?.[ei]?.sets?.[si];if(!set?.timerStartedAt)return;
+  const started=new Date(set.timerStartedAt).getTime();
+  const display=document.querySelector(`[data-timed-display="${si}"]`);
+  const btn=document.querySelector(`[data-timed-set="${si}"]`);
+  if(btn){btn.textContent="Stop";btn.classList.add("is-running");}
+  const tick=()=>{
+    const seconds=Math.max(0,Math.floor((Date.now()-started)/1000));
+    if(display)display.textContent=formatExerciseSeconds(seconds);
+  };
+  tick();timedSetTimer=setInterval(tick,250);
+}
+function stopTimedSet(ei,si){
+  const set=state.activeWorkout?.exercises?.[ei]?.sets?.[si];if(!set?.timerStartedAt)return;
+  const seconds=Math.max(1,Math.round((Date.now()-new Date(set.timerStartedAt).getTime())/1000));
+  clearTimedSetTimers();
+  set.timedSeconds=seconds;set.actual=String(seconds);set.timerStartedAt=null;set.completed=true;saveState();
+  renderLiveExercises();
+}
+function completeCurrentExercise(){
+  const w=state.activeWorkout;if(!w)return;const ei=w.currentExerciseIndex||0,e=w.exercises[ei];if(!e||!allSetsComplete(e))return;
+  clearTimedSetTimers();
+  e.exerciseComplete=true;e.completedAt=new Date().toISOString();saveState();
+  const volume=exerciseVolume(e);
+  const timedTotal=e.timed?e.sets.reduce((sum,s)=>sum+Number(s.timedSeconds||s.actual||0),0):0;
+  const bestTimed=e.timed?Math.max(...e.sets.map(s=>Number(s.timedSeconds||s.actual||0))):0;
+  $("exerciseCompleteTitle").textContent=`${randomFrom(exerciseCheers)}, ${state.profile.name}!`;
+  $("exerciseCompleteMessage").textContent=e.timed
+    ? `${e.name} complete — ${formatExerciseSeconds(timedTotal)} held across ${e.sets.length} ${e.sets.length===1?"set":"sets"}. ${ei<w.exercises.length-1?"Take that momentum into the next one.":"That was the final exercise — workout complete!"}`
+    : `${e.name} complete. ${ei<w.exercises.length-1?"Take that momentum into the next one.":"That was the final exercise — workout complete!"}`;
+  $("exerciseCompleteStats").innerHTML=e.timed
+    ? `<div><span>SETS</span><strong>${e.sets.length} ✓</strong></div><div><span>TOTAL TIME</span><strong>${formatExerciseSeconds(timedTotal)}</strong></div><div><span>BEST SET</span><strong>${formatExerciseSeconds(bestTimed)}</strong></div>`
+    : `<div><span>SETS</span><strong>${e.sets.length} ✓</strong></div>${Number(e.weight)>0?`<div><span>WEIGHT</span><strong>${fmt(e.weight)} kg</strong></div><div><span>VOLUME</span><strong>${fmt(volume)} kg</strong></div>`:""}`;
+  $("nextExerciseBtn").textContent=ei<w.exercises.length-1?"Next exercise":"See workout result";
+  $("exerciseCompleteDialog").showModal();
+}
+$("nextExerciseBtn").addEventListener("click",()=>{
+  clearTimedSetTimers();
+  const w=state.activeWorkout;if(!w)return;$("exerciseCompleteDialog").close();
+  if((w.currentExerciseIndex||0)<w.exercises.length-1){w.currentExerciseIndex+=1;saveState();renderLiveExercises();}
+  else showWorkoutCelebration();
+});
+function showWorkoutCelebration(){
+  const w=state.activeWorkout;if(!w)return;clearInterval(workoutTimer);
+  const mins=Math.max(1,elapsedMinutes(w.startedAt)),volume=workoutVolume(w);
+  $("finishFeelingTitle").innerHTML=`<span>${esc(randomFrom(workoutCheers))},</span> <strong>${esc(state.profile.name)}!</strong>`;
+  $("finishWorkoutSummary").textContent=randomFrom(workoutSubCheers);
+  $("finishTotalWeight").textContent=volume>0?`${fmt(volume)} kg`:"—";
+  $("finishWorkoutDuration").textContent=mins<60?`${mins} min`:elapsedClock(w.startedAt);
+  finishFeeling=3;qsa("[data-finish-feel]").forEach(x=>x.classList.toggle("selected",x.dataset.finishFeel==="3"));
+
+  // The completion screen is a fresh full-screen moment, not a continuation
+  // of the scrolled live-workout sheet.
+  const result=$("finishFeelingDialog");
+  if($("workoutDialog").open) $("workoutDialog").close();
+  result.scrollTop=0;
+  if(!result.open) result.showModal();
+  result.scrollTop=0;
+  requestAnimationFrame(()=>{
+    result.scrollTop=0;
+    result.querySelector(".premium-star")?.scrollIntoView({block:"start",behavior:"instant"});
+    result.scrollTop=0;
+  });
 }
 $("continueWorkoutBtn").addEventListener("click",openWorkout);
-$("minimiseWorkoutBtn").addEventListener("click",()=>{clearInterval(workoutTimer);$("workoutDialog").close();renderExercise();});
-$("addRandomExerciseBtn").addEventListener("click",()=>{$("randomExerciseName").value="";$("randomExerciseSets").value=3;$("randomExerciseReps").value=10;$("randomExerciseDialog").showModal();});
+$("minimiseWorkoutBtn").addEventListener("click",()=>{clearInterval(workoutTimer);clearTimedSetTimers();$("workoutDialog").close();renderExercise();});
+$("cancelWorkoutBtn").addEventListener("click",()=>{
+  const w=state.activeWorkout;if(!w)return;
+  const ok=confirm(`Cancel "${w.name}"?\n\nThis unfinished workout will be discarded and won't be added to History. Your saved routine will stay unchanged.`);
+  if(!ok)return;
+  clearInterval(workoutTimer);clearTimedSetTimers();
+  state.activeWorkout=null;
+  saveState();
+  if($("exerciseCompleteDialog").open) $("exerciseCompleteDialog").close();
+  if($("finishFeelingDialog").open) $("finishFeelingDialog").close();
+  if($("workoutDialog").open) $("workoutDialog").close();
+  renderAll();
+});
+$("addRandomExerciseBtn").addEventListener("click",()=>{$("randomExerciseName").value="";$("randomExerciseSets").value=3;$("randomExerciseReps").value=10;$("randomExerciseWeight").value="";$("randomExerciseNotes").value="";$("randomExerciseDialog").showModal();});
 $("randomExerciseForm").addEventListener("submit",e=>{
   e.preventDefault();if(!state.activeWorkout)return;
-  const name=$("randomExerciseName").value.trim(),sets=Number($("randomExerciseSets").value),reps=Number($("randomExerciseReps").value);
+  const name=$("randomExerciseName").value.trim(),sets=Number($("randomExerciseSets").value),reps=Number($("randomExerciseReps").value),weight=Number($("randomExerciseWeight").value||0),notes=$("randomExerciseNotes").value.trim();
   if(!name||sets<1||reps<1)return;
-  state.activeWorkout.exercises.push({id:id(),name,targetReps:reps,random:true,sets:Array.from({length:sets},()=>({actual:""}))});
+  state.activeWorkout.exercises.push({id:id(),name,targetReps:reps,weight,notes,timed:false,random:true,exerciseComplete:false,sets:Array.from({length:sets},()=>({actual:"",timedSeconds:0,timerStartedAt:null,completed:false}))});
   saveState();$("randomExerciseDialog").close();renderLiveExercises();
-});
-$("finishWorkoutBtn").addEventListener("click",()=>{
-  if(!state.activeWorkout)return;
-  clearInterval(workoutTimer);
-  const mins=elapsedMinutes(state.activeWorkout.startedAt),completedSets=state.activeWorkout.exercises.reduce((n,e)=>n+e.sets.filter(s=>String(s.actual).trim()!=="").length,0);
-  $("finishFeelingTitle").textContent=`Nice work, ${state.profile.name}!`;
-  $("finishWorkoutSummary").textContent=`${state.activeWorkout.name} · ${Math.max(1,mins)} minutes · ${completedSets} sets logged. How did it feel?`;
-  finishFeeling=3;qsa("[data-finish-feel]").forEach(x=>x.classList.toggle("selected",x.dataset.finishFeel==="3"));
-  $("finishFeelingDialog").showModal();
 });
 qsa("[data-finish-feel]").forEach(btn=>btn.addEventListener("click",()=>{
   finishFeeling=Number(btn.dataset.finishFeel);qsa("[data-finish-feel]").forEach(x=>x.classList.toggle("selected",x===btn));
@@ -1102,16 +1343,16 @@ qsa("[data-finish-feel]").forEach(btn=>btn.addEventListener("click",()=>{
 $("saveFinishedWorkout").addEventListener("click",()=>{
   const w=state.activeWorkout;if(!w)return;
   const endedAt=new Date().toISOString(),minutes=Math.max(1,elapsedMinutes(w.startedAt,new Date(endedAt).getTime()));
-  const completedSets=w.exercises.reduce((n,e)=>n+e.sets.filter(s=>String(s.actual).trim()!=="").length,0);
+  const completedSets=w.exercises.reduce((n,e)=>n+e.sets.filter(s=>s.completed||String(s.actual).trim()!=="").length,0);
   const plannedSets=w.exercises.reduce((n,e)=>n+e.sets.length,0);
+  const totalWeight=workoutVolume(w);
   ensureDay().activities.push({
     id:w.id,type:"workout",name:w.name,minutes,feel:finishFeeling,created:Date.now(),
-    startedAt:w.startedAt,endedAt,exerciseCount:w.exercises.length,completedSets,plannedSets,
+    startedAt:w.startedAt,endedAt,exerciseCount:w.exercises.length,completedSets,plannedSets,totalWeight,
     exercises:w.exercises
   });
   state.activeWorkout=null;state.achievements.firstMove=true;saveState();
   $("finishFeelingDialog").close();$("workoutDialog").close();renderAll();
-  setTimeout(()=>alert(`Great work, ${state.profile.name}! ${minutes} minutes completed. ${feelEmoji(finishFeeling)}`),80);
 });
 
 /* Quick activities */
