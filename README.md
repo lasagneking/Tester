@@ -1,4 +1,4 @@
-CholScore v1.0.1 - Continuous confetti loop on workout completion screen
+CholScore v1.0.2 - Diagnostic for the "Total Weight Lifted" showing "—" bug
 
 # CholScore v0.8.5 — Cache + Delete Hotfix
 
@@ -38,6 +38,27 @@ No new features.
 - Cancelling discards only the unfinished workout; the saved routine remains unchanged.
 - Cancelled workouts are not written to History.
 - service-worker cache version bumped to `cholscore-v091`.
+
+## v1.0.2 volume-zero diagnostic (temporary)
+- Reported: "Total Weight Lifted" sometimes shows "—" on the completion screen even
+  though every exercise had a weight entered, all came from the saved routine, and
+  the workout duration is correct.
+- Code review + isolated testing of `workoutVolume`/`exerciseVolume`/
+  `resolvedWorkoutWeight` against realistic and deliberately-corrupted data could not
+  reproduce a zero total under those conditions — the weight-resolution and
+  reps-completion logic is deterministic, so if weight displays correctly mid-workout
+  it must resolve the same way at the finish screen.
+- Hardened `resolvedWorkoutWeight`/`exerciseVolume`/`workoutVolume` with explicit
+  `Number.isFinite` guards throughout (defensive, doesn't rely on NaN comparisons
+  quietly working) and fixed `completeCurrentExercise` calling `exerciseVolume`
+  without the workout context (a real, separate inconsistency).
+- Added a **temporary on-screen diagnostic**: `#finishVolumeDebug`. If the total is
+  ever 0 while the workout has exercises, a small dashed box appears under the stat
+  cards printing each exercise's exact weight, timed flag, and per-set
+  completed/actual values — no browser dev tools needed. Screenshot it next time this
+  happens and that'll pinpoint the exact cause. Safe to delete once resolved.
+- `index.html`, `styles.css`, and the image cache-busting query strings bumped to `v102`.
+- service-worker cache version bumped to `cholscore-v102`.
 
 ## v1.0.1 continuous confetti loop
 - The v1.0.0 burst only ran once (~2s) and then stopped. Confetti now trickles

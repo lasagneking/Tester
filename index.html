@@ -10,7 +10,7 @@
   <meta name="application-name" content="CholScore" />
   <title>CholScore</title>
   <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="styles.css?v=101" />
+  <link rel="stylesheet" href="styles.css?v=102" />
 </head>
 <body>
   <div id="app">
@@ -374,7 +374,7 @@
     <p id="finishWorkoutSummary" class="workout-celebration-message premium-subtitle"></p>
 
     <div class="premium-athlete premium-athlete-image" aria-hidden="true">
-      <img src="workout-victory-silhouette.png?v=101" alt="" />
+      <img src="workout-victory-silhouette.png?v=102" alt="" />
     </div>
 
     <div class="workout-result-grid premium-result-grid">
@@ -391,6 +391,13 @@
         <small>Great focus and dedication! ⭐</small>
       </div>
     </div>
+
+    <!-- Temporary diagnostic (v1.0.2) — only appears if the weight total
+         computes to zero despite the workout having exercises, so the
+         exact per-exercise data can be read straight off the screen
+         without needing browser dev tools. Safe to remove once the
+         underlying issue is confirmed and fixed. -->
+    <div id="finishVolumeDebug" style="display:none;font-size:10px;line-height:1.5;color:#c9b8e6;background:rgba(255,255,255,.05);border:1px dashed rgba(255,190,45,.4);border-radius:10px;padding:8px 10px;margin-top:-6px;word-break:break-word;white-space:pre-wrap"></div>
 
     <div class="premium-motivation"><b>♡</b><span>Every rep brings you closer to<br><strong>a stronger, healthier you.</strong> ✨</span></div>
 
@@ -611,7 +618,7 @@
   </dialog>
 
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <script src="app.js?v=101"></script>
+  <script src="app.js?v=102"></script>
 
   <script>
     if ("serviceWorker" in navigator) {

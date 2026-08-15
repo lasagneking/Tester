@@ -1102,10 +1102,10 @@ function routineExerciseForWorkoutExercise(w,e){
 }
 function resolvedWorkoutWeight(w,e){
   const direct=Number(e?.weight||0);
-  if(direct>0)return direct;
+  if(Number.isFinite(direct)&&direct>0)return direct;
   const source=routineExerciseForWorkoutExercise(w,e);
   const fallback=Number(source?.weight||0);
-  return fallback>0?fallback:0;
+  return Number.isFinite(fallback)&&fallback>0?fallback:0;
 }
 function ensureWorkoutShape(w){
   if(!w)return;
@@ -1122,18 +1122,35 @@ function ensureWorkoutShape(w){
   });
   w.currentExerciseIndex=Math.max(0,Math.min(w.currentExerciseIndex,Math.max(0,w.exercises.length-1)));
 }
+// A single exercise with a bad/legacy weight or rep value (e.g. something
+// non-numeric left over from older saved data) used to poison the whole
+// workout total via NaN, since NaN + anything = NaN and NaN > 0 is false —
+// so the finished-workout screen would show "—" even though every other
+// exercise was tracked correctly. Every value here is now explicitly
+// guarded with Number.isFinite so one bad exercise can only ever
+// contribute 0, never wipe out the rest of the total.
 function exerciseVolume(e,w=null){
-  const weight=w?resolvedWorkoutWeight(w,e):Number(e?.weight||0);
+  const rawWeight=w?resolvedWorkoutWeight(w,e):Number(e?.weight||0);
+  const weight=Number.isFinite(rawWeight)?rawWeight:0;
   if(weight<=0)return 0;
-  return (e.sets||[]).reduce((sum,set)=>{
-    const reps=Number(set.actual||0);
-    return sum+((set.completed||String(set.actual??"").trim()!=="")&&reps>0?reps*weight:0);
+  return (e?.sets||[]).reduce((sum,set)=>{
+    const rawReps=Number(set?.actual||0);
+    const reps=Number.isFinite(rawReps)?rawReps:0;
+    const setDone=Boolean(set?.completed)||String(set?.actual??"").trim()!=="";
+    return sum+(setDone&&reps>0?reps*weight:0);
   },0);
 }
 function workoutVolume(w){
   if(!w)return 0;
   ensureWorkoutShape(w);
-  return (w.exercises||[]).reduce((sum,e)=>sum+exerciseVolume(e,w),0);
+  return (w.exercises||[]).reduce((sum,e)=>{
+    const v=exerciseVolume(e,w);
+    if(!Number.isFinite(v)){
+      console.warn("[CholScore] non-finite volume for exercise, contributing 0:",e);
+      return sum;
+    }
+    return sum+v;
+  },0);
 }
 function allSetsComplete(e){return Boolean(e?.sets?.length)&&e.sets.every(s=>s.completed&&(e.timed?Number(s.timedSeconds||s.actual||0)>0:String(s.actual).trim()!==""));}
 function startRoutine(rid){
@@ -1274,7 +1291,7 @@ function completeCurrentExercise(){
   const w=state.activeWorkout;if(!w)return;const ei=w.currentExerciseIndex||0,e=w.exercises[ei];if(!e||!allSetsComplete(e))return;
   clearTimedSetTimers();
   e.exerciseComplete=true;e.completedAt=new Date().toISOString();saveState();
-  const volume=exerciseVolume(e);
+  const volume=exerciseVolume(e,w);
   const timedTotal=e.timed?e.sets.reduce((sum,s)=>sum+Number(s.timedSeconds||s.actual||0),0):0;
   const bestTimed=e.timed?Math.max(...e.sets.map(s=>Number(s.timedSeconds||s.actual||0))):0;
   $("exerciseCompleteTitle").textContent=`${randomFrom(exerciseCheers)}, ${state.profile.name}!`;
@@ -1335,6 +1352,24 @@ function showWorkoutCelebration(){
   $("finishWorkoutSummary").textContent=randomFrom(workoutSubCheers);
   $("finishTotalWeight").textContent=volume>0?`${fmt(volume)} kg`:"—";
   $("finishWorkoutDuration").textContent=mins<60?`${mins} min`:elapsedClock(w.startedAt);
+
+  // Temporary diagnostic (v1.0.2): if the total comes out to zero despite
+  // the workout having exercises, print exactly what each exercise's
+  // weight/reps/completed data looked like at calculation time, right on
+  // the screen. Remove this block once the real cause is found and fixed.
+  const debugEl=$("finishVolumeDebug");
+  if(debugEl){
+    if(volume<=0&&(w.exercises||[]).length){
+      const lines=(w.exercises||[]).map(e=>{
+        const setsDesc=(e.sets||[]).map(s=>`${s.completed?"✓":"·"}${s.actual===""?"(empty)":s.actual}`).join(", ");
+        return `${e.name} — weight:${JSON.stringify(e.weight)} timed:${e.timed} sets:[${setsDesc}]`;
+      });
+      debugEl.textContent="DEBUG (temporary) — total came out to 0. Per-exercise data:\n"+lines.join("\n");
+      debugEl.style.display="block";
+    }else{
+      debugEl.style.display="none";debugEl.textContent="";
+    }
+  }
   finishFeeling=3;qsa("[data-finish-feel]").forEach(x=>x.classList.toggle("selected",x.dataset.finishFeel==="3"));
   startConfettiLoop($("confettiBurst"));
 
