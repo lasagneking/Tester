@@ -1,0 +1,902 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0d12" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+  <link rel="apple-touch-icon" href="https://lasagneking.github.io/apple-touch-icon.png" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <!-- v1.9.0: iOS Safari still doesn't honor the standard mobile-web-app-capable
+       tag on every version in circulation, so the Apple-specific tag is kept
+       alongside it for broader compatibility — this is what actually removes
+       the browser chrome when launched from the home screen. -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="CholScore" />
+  <meta name="application-name" content="CholScore" />
+  <title>CholScore</title>
+  <link rel="manifest" href="manifest.json" />
+  <!-- v1.9.1: sets the dark background the instant the page starts parsing,
+       before styles.css has had a chance to load. Without this there's a
+       real gap — however brief — where the browser shows its own default
+       white background until the external stylesheet arrives, which reads
+       as a white flash on launch. This is a separate mechanism from the
+       apple-touch-startup-image splash screens below: this covers the
+       moment the page itself is loading; the splash covers the moment
+       before that, while iOS is launching the app shell. -->
+  <style>html,body{background:#090b10}</style>
+  <link rel="stylesheet" href="styles.css?v=165" />
+
+  <!-- v1.9.0 iOS splash screens. Unlike Android, iOS still doesn't generate
+       one from the manifest — it needs an exact pixel-matched PNG per
+       physical device size, chosen by a media query it matches literally
+       (no scaling to fit). Portrait-only, since the app is orientation-
+       locked to portrait-primary in manifest.json. Covers iPhone X (2017)
+       through iPhone 17 Pro Max — the 17 Pro Max shares the exact same
+       440×956 CSS viewport as the 16 Pro Max (verified against three
+       independent sources), so no separate entry was needed for it. Only
+       the base iPhone 17/17 Pro and iPhone Air are still unconfirmed. -->
+  <link rel="apple-touch-startup-image" href="https://lasagneking.github.io/splash/apple-splash-750x1334.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)" />
+  <link rel="apple-touch-startup-image" href="https://lasagneking.github.io/splash/apple-splash-1125x2436.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" />
+  <link rel="apple-touch-startup-image" href="https://lasagneking.github.io/splash/apple-splash-828x1792.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)" />
+  <link rel="apple-touch-startup-image" href="https://lasagneking.github.io/splash/apple-splash-1242x2688.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3)" />
+  <link rel="apple-touch-startup-image" href="https://lasagneking.github.io/splash/apple-splash-1170x2532.png" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)" />
+  <link rel="apple-touch-startup-image" href="https://lasagneking.github.io/splash/apple-splash-1284x2778.png" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)" />
+  <link rel="apple-touch-startup-image" href="https://lasagneking.github.io/splash/apple-splash-1179x2556.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)" />
+  <link rel="apple-touch-startup-image" href="https://lasagneking.github.io/splash/apple-splash-1290x2796.png" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" />
+  <link rel="apple-touch-startup-image" href="https://lasagneking.github.io/splash/apple-splash-1206x2622.png" media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3)" />
+  <link rel="apple-touch-startup-image" href="https://lasagneking.github.io/splash/apple-splash-1320x2868.png" media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3)" />
+</head>
+<body>
+  <div id="app">
+    <section id="onboarding" class="screen onboarding hidden">
+      <div class="brand-orb">C</div>
+      <p class="eyebrow">WELCOME TO</p>
+      <h1>CholScore</h1>
+      <p class="lead">Small choices. Better days.</p>
+
+      <div class="glass-card setup-card">
+        <label for="nameInput">What should we call you?</label>
+        <input id="nameInput" type="text" maxlength="30" placeholder="Your name" autocomplete="given-name" />
+
+        <label class="top-gap">Choose your daily saturated-fat target</label>
+        <div class="target-grid">
+          <button class="target-option" data-target="20">
+            <strong>20g</strong><span>UK guideline for average women</span>
+          </button>
+          <button class="target-option" data-target="30">
+            <strong>30g</strong><span>UK guideline for average men</span>
+          </button>
+          <button class="target-option" data-target="custom">
+            <strong>Custom</strong><span>Use your own target</span>
+          </button>
+        </div>
+
+        <div id="customTargetWrap" class="hidden">
+          <label for="customTarget">Custom target (grams)</label>
+          <input id="customTarget" type="number" min="1" max="100" step="0.1" placeholder="e.g. 24" />
+        </div>
+
+        <label class="top-gap">Choose your distance units</label>
+        <div class="unit-grid">
+          <button type="button" class="unit-option selected" data-unit="mi">
+            <strong>Miles</strong><span>mi</span>
+          </button>
+          <button type="button" class="unit-option" data-unit="km">
+            <strong>Kilometres</strong><span>km</span>
+          </button>
+        </div>
+
+        <label class="top-gap">Add a profile photo (optional)</label>
+        <div class="settings-photo-row">
+          <button type="button" id="onboardingAvatarPreview" class="profile-avatar" aria-label="Add photo"></button>
+          <button type="button" id="onboardingAddPhotoBtn" class="secondary-btn">Choose photo</button>
+        </div>
+        <input id="onboardingPhotoFile" type="file" accept="image/*" class="hidden" />
+
+        <button id="finishSetup" class="primary-btn">Start CholScore</button>
+      </div>
+    </section>
+
+    <main id="mainApp" class="hidden">
+      <header class="app-header">
+        <div>
+          <p class="eyebrow">CHOLSCORE</p>
+          <h2 id="greeting">Good evening</h2>
+        </div>
+        <button id="profileBtn" class="profile-avatar" aria-label="Profile"></button>
+      </header>
+
+      <section id="todayView" class="view active">
+        <div class="hero-card">
+          <button type="button" id="scoreInfoBtn" class="hero-info-btn" aria-label="What do these score labels mean?">ⓘ</button>
+          <div>
+            <p id="heroMessage" class="hero-message">You're building a better day.</p>
+            <h3>Today's progress</h3>
+          </div>
+          <div class="rings-wrap">
+            <div class="ring-card">
+              <div id="satRing" class="progress-ring" style="--pct:0">
+                <div class="ring-inner">
+                  <strong id="satUsed">0.0g</strong>
+                  <span>sat fat</span>
+                </div>
+              </div>
+              <p><span id="satRemaining">0.0g</span> remaining</p>
+            </div>
+
+            <div class="ring-card">
+              <div id="moveRing" class="progress-ring move" style="--pct:0">
+                <div class="ring-inner">
+                  <strong id="moveMinutes">0</strong>
+                  <span>minutes</span>
+                </div>
+              </div>
+              <p><span id="activityCount">0</span> activities</p>
+            </div>
+
+            <div class="ring-card">
+              <div id="scoreRing" class="progress-ring score" style="--pct:0">
+                <div class="ring-inner">
+                  <strong id="dailyScore">0</strong>
+                  <span>score</span>
+                </div>
+              </div>
+              <p><span id="scoreLabel">Getting started</span></p>
+            </div>
+          </div>
+        </div>
+
+        
+        <button id="checkFoodBtn" class="check-food-card">
+          <div class="check-food-icon">⌁</div>
+          <div>
+            <strong>Check food</strong>
+            <span>Scan something before you decide</span>
+          </div>
+          <b>›</b>
+        </button>
+
+<section class="section-block">
+          <div class="section-title">
+            <h3>Today's timeline</h3>
+            <span id="timelineCount">0 items</span>
+          </div>
+          <div id="timeline" class="timeline empty-state">Nothing logged yet. Your first win starts here.</div>
+        </section>
+
+        
+        <div class="weekly-bank-card" id="rewardBankCard" role="button" tabindex="0">
+          <div class="bank-icon">🏦</div>
+          <div class="bank-copy">
+            <span>REWARD BANK</span>
+            <strong><span id="bankPoints">0</span> points</strong>
+            <small id="bankGoalText">Tap to set a goal</small>
+            <div class="bank-goal-bar hidden" id="bankGoalBar"><i id="bankGoalBarFill"></i></div>
+          </div>
+          <div class="bank-badge" id="bankBadge">Tap to view</div>
+        </div>
+
+<button id="checkoutBtn" class="checkout-btn">🌙 Check out for today</button>
+      </section>
+
+      <section id="foodView" class="view">
+        <div class="section-title">
+          <div><p class="eyebrow">FOOD</p><h2>Today's food</h2></div>
+          <button id="openFoodForm" class="mini-btn">+ Add</button>
+        </div>
+
+        <div class="metric-card">
+          <span>Saturated fat</span>
+          <strong><span id="foodTotal">0.0</span>g / <span id="foodTarget">30</span>g</strong>
+          <div class="bar"><i id="foodBar"></i></div>
+        </div>
+
+        <div class="scan-card">
+          <div>
+            <p class="eyebrow">BARCODE</p>
+            <h3>Scan a product</h3>
+            <p>Scan a food barcode and CholScore will look it up in Open Food Facts.</p>
+          </div>
+          <button id="scanBtn" class="secondary-btn">Scan barcode</button>
+        </div>
+
+        <div id="staplesSection" class="staples-section hidden">
+          <p class="eyebrow">STAPLES</p>
+          <h3 class="staples-heading">Quick add</h3>
+          <div id="staplesRow" class="staples-row"></div>
+        </div>
+
+        <div id="foodList" class="list-stack"></div>
+      </section>
+
+      <section id="exerciseView" class="view">
+        <div class="section-title">
+          <div><p class="eyebrow">MOVE</p><h2>Exercise</h2></div>
+          <button id="newRoutineBtn" class="mini-btn">+ Routine</button>
+        </div>
+
+        <div class="metric-card">
+          <span>Movement today</span>
+          <strong><span id="exerciseMinutes">0</span> minutes</strong>
+          <div class="bar"><i id="exerciseBar"></i></div>
+        </div>
+
+        <div class="protein-card">
+          <div class="protein-card-top">
+            <div>
+              <p class="eyebrow">PROTEIN TODAY</p>
+              <strong><span id="proteinTodayTotal">0.0</span>g</strong>
+              <small id="proteinFoodCount">From 0 logged foods</small>
+            </div>
+            <div class="protein-badge">🥚</div>
+          </div>
+          <div id="proteinBreakdown" class="protein-breakdown">
+            <div class="empty-state">Protein from scanned foods will appear here.</div>
+          </div>
+        </div>
+
+        <div id="activeWorkoutBanner" class="active-workout-banner hidden">
+          <div>
+            <p class="eyebrow">WORKOUT IN PROGRESS</p>
+            <strong id="activeWorkoutName">Workout</strong>
+            <small id="activeWorkoutElapsed">0 min elapsed</small>
+          </div>
+          <button id="continueWorkoutBtn" class="secondary-btn">Continue</button>
+        </div>
+
+        <section class="section-block">
+          <div class="section-title">
+            <h3>My routines</h3>
+            <span id="routineCount">0 routines</span>
+          </div>
+          <div id="routineList" class="routine-list"></div>
+        </section>
+
+        <section class="section-block">
+          <div class="section-title"><h3>Quick activity</h3></div>
+          <div class="exercise-actions">
+            <button class="activity-type-card quick-activity" data-type="walk"><span>🚶</span><strong>Walk</strong><small>Log a walk</small></button>
+            <button class="activity-type-card quick-activity" data-type="run"><span>🏃</span><strong>Run</strong><small>Log a run</small></button>
+            <button class="activity-type-card quick-activity" data-type="oneoff"><span>⚡</span><strong>One-off</strong><small>Log other exercise</small></button>
+          </div>
+        </section>
+
+        <section class="section-block">
+          <div class="section-title"><h3>Today's completed activity</h3></div>
+          <div id="exerciseList" class="list-stack"></div>
+        </section>
+
+        <div class="pr-section">
+          <div class="pr-section-head"><h3>Personal Records</h3></div>
+          <div id="prList" class="pr-list"></div>
+        </div>
+      </section>
+
+      <section id="rewardsView" class="view">
+        <div class="section-title">
+          <div><p class="eyebrow">REWARDS</p><h2>Achievement collection</h2></div>
+        </div>
+
+        <div class="rewards-hero collection-hero">
+          <p>Your collection</p>
+          <strong><span id="achievementUnlockedCount">0</span>/<span id="achievementTotalCount">0</span></strong>
+          <span id="rewardMessage">Collect them all.</span>
+          <div class="collection-progress"><i id="collectionProgressBar"></i></div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card"><span>🔥</span><strong id="streakStat">0</strong><small>day streak</small></div>
+          <div class="stat-card"><span>⭐</span><strong id="pointsStat">0</strong><small>total points</small></div>
+          <div class="stat-card"><span>🏆</span><strong id="bestStat">0</strong><small>personal best</small></div>
+        </div>
+
+        <div class="reward-tabs" id="rewardCategoryTabs"></div>
+        <div id="achievementCategorySummary" class="achievement-category-summary"></div>
+        <div id="achievementCollection" class="achievement-collection"></div>
+      </section>
+
+      <section id="historyView" class="view">
+        <div class="section-title">
+          <div><p class="eyebrow">HISTORY</p><h2>Your days</h2></div>
+        </div>
+
+        <div class="segmented" id="historySegmented">
+          <button type="button" id="historyTabCalendar" class="active">Calendar</button>
+          <button type="button" id="historyTabTrends">Trends</button>
+          <button type="button" id="historyTabReports">Reports</button>
+        </div>
+
+        <div id="historyCalendarView">
+          <div class="calendar-card">
+            <div class="calendar-head">
+              <button id="prevMonth">‹</button>
+              <strong id="monthTitle"></strong>
+              <button id="nextMonth">›</button>
+            </div>
+            <div class="weekday-row"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+            <div id="calendarGrid" class="calendar-grid"></div>
+          </div>
+          <div id="historyDetail" class="history-detail empty-state">Choose a day to see what happened.</div>
+        </div>
+
+        <div id="historyTrendsView" class="hidden">
+          <div class="range-row">
+            <button type="button" class="range-btn" data-range="7">7 days</button>
+            <button type="button" class="range-btn active" data-range="30">30 days</button>
+            <button type="button" class="range-btn" data-range="90">90 days</button>
+          </div>
+
+          <div id="trendsEmptyState" class="empty-state hidden">Log a few days to start seeing trends.</div>
+
+          <div id="trendsContent">
+            <div class="trend-card">
+              <div class="trend-head">
+                <div><h3>Saturated fat</h3><p>Daily total vs your target</p></div>
+                <div class="trend-stat" id="satTrendStat"><strong>0.0g</strong><small>avg/day</small></div>
+              </div>
+              <div class="chart-wrap"><svg id="satChart" viewBox="0 0 320 110" preserveAspectRatio="none"></svg></div>
+              <div class="chart-xlabels" id="satChartLabels"></div>
+            </div>
+
+            <div class="trend-card">
+              <div class="trend-head">
+                <div><h3>CholScore</h3><p>Daily score over time</p></div>
+                <div class="trend-stat" id="scoreTrendStat"><strong>0</strong><small>avg score</small></div>
+              </div>
+              <div class="chart-wrap"><svg id="scoreChart" viewBox="0 0 320 110" preserveAspectRatio="none"></svg></div>
+              <div class="chart-xlabels" id="scoreChartLabels"></div>
+            </div>
+
+            <div class="trend-card">
+              <div class="trend-head">
+                <div><h3>Strength progress</h3><p>Heaviest weight (or longest hold) per session</p></div>
+              </div>
+              <div id="strengthEmptyState" class="empty-state hidden">Complete the same exercise twice to see its trend.</div>
+              <div id="strengthTrendBody">
+                <div class="exercise-picker" id="exercisePicker"></div>
+                <div class="chart-wrap"><svg id="strengthChart" viewBox="0 0 320 110" preserveAspectRatio="none"></svg></div>
+                <div class="chart-xlabels" id="strengthChartLabels"></div>
+                <div class="pr-callout" id="strengthCallout"><span>🏆</span><div id="strengthCalloutText"></div></div>
+              </div>
+            </div>
+
+            <div class="trend-card">
+              <div class="trend-head">
+                <div><h3>Cardio progress</h3><p>Pace per session — walk or run</p></div>
+              </div>
+              <div id="cardioEmptyState" class="empty-state hidden">Log the same activity type twice to see its trend.</div>
+              <div id="cardioTrendBody">
+                <div class="exercise-picker" id="cardioPicker"></div>
+                <div class="chart-wrap"><svg id="cardioChart" viewBox="0 0 320 110" preserveAspectRatio="none"></svg></div>
+                <div class="chart-xlabels" id="cardioChartLabels"></div>
+                <div class="pr-callout" id="cardioCallout"><span>⚡</span><div id="cardioCalloutText"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="historyReportsView" class="hidden">
+          <div class="range-row">
+            <button type="button" class="range-btn active" data-report-range="lastweek">Last week</button>
+            <button type="button" class="range-btn" data-report-range="week">This week</button>
+            <button type="button" class="range-btn" data-report-range="month">Last 4 weeks</button>
+          </div>
+          <div id="reportContent"></div>
+        </div>
+      </section>
+
+      <nav class="bottom-nav">
+        <button class="nav-btn active" data-view="todayView"><span>◉</span><small>Today</small></button>
+        <button class="nav-btn" data-view="foodView"><span>⌁</span><small>Food</small></button>
+        <button class="nav-btn" data-view="exerciseView"><span>↗</span><small>Exercise</small></button>
+        <button class="nav-btn" data-view="rewardsView"><span>★</span><small>Rewards</small></button>
+        <button class="nav-btn" data-view="historyView"><span>▦</span><small>History</small></button>
+      </nav>
+    </main>
+  </div>
+
+  <dialog id="foodDialog" class="modal">
+    <form method="dialog" id="foodForm">
+      <div class="modal-head"><h3>Add food</h3><button type="button" data-close-dialog="foodDialog" aria-label="Cancel">×</button></div>
+      <label>Product / food name<input id="foodName" required placeholder="e.g. Greek yoghurt" /></label>
+      <label>Meal
+        <select id="mealType" required>
+          <option value="" selected disabled>Choose meal</option>
+          <option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snack</option>
+        </select>
+      </label>
+      <label>Saturated fat consumed (g)<input id="satFat" required type="number" min="0" step="0.1" placeholder="e.g. 2.4" /></label>
+      <button class="primary-btn" value="default">Add to today</button><button type="button" class="cancel-btn" data-close-dialog="foodDialog">Cancel</button>
+    </form>
+  </dialog>
+
+  <dialog id="exerciseDialog" class="modal">
+    <form method="dialog" id="exerciseForm">
+      <div class="modal-head"><h3>Log quick activity</h3><button type="button" data-close-dialog="exerciseDialog" aria-label="Cancel">×</button></div>
+      <label>Activity
+        <select id="activityType"><option value="walk">Walk</option><option value="run">Run</option><option value="oneoff">One-off exercise</option></select>
+      </label>
+      <label>Name<input id="activityName" required placeholder="e.g. Evening walk" /></label>
+      <div class="two-col">
+        <label>Start<input id="startTime" type="time" required /></label>
+        <label>Finish<input id="finishTime" type="time" required /></label>
+      </div>
+      <label>Distance (<span id="distanceUnitLabel">mi</span>, optional)<input id="distance" type="number" min="0" step="0.1" /></label>
+      <label>How did it feel?</label>
+      <div class="feeling-row" id="quickFeelingRow">
+        <button type="button" data-feel="1">😣</button>
+        <button type="button" data-feel="2">😕</button>
+        <button type="button" data-feel="3" class="selected">😐</button>
+        <button type="button" data-feel="4">🙂</button>
+        <button type="button" data-feel="5">😄</button>
+      </div>
+      <button class="primary-btn" value="default">Save activity</button><button type="button" class="cancel-btn" data-close-dialog="exerciseDialog">Cancel</button>
+    </form>
+  </dialog>
+
+  <dialog id="activityCompleteDialog" class="modal activity-complete-modal celebration">
+    <div class="acm-scene" aria-hidden="true"><div class="acm-stars" id="acmStars"></div></div>
+    <div class="acm-content">
+      <div class="acm-medal-wrap">
+        <div class="acm-medal-ribbon"></div>
+        <div class="acm-medal">🥇</div>
+        <div class="acm-type-badge" id="acmTypeBadge">🚶</div>
+      </div>
+      <div id="acmPrBadges" class="pr-badges"></div>
+      <p class="eyebrow" id="acmEyebrow">WALK COMPLETE</p>
+      <h2 id="acmTitle">Great work!</h2>
+      <p id="acmMessage"></p>
+      <div id="acmStats" class="acm-stats"></div>
+      <button id="closeActivityComplete" class="primary-btn">Nice one!</button>
+      <button id="shareActivityBtn" type="button" class="checkout-share-btn">Share achievement</button>
+    </div>
+  </dialog>
+
+  <dialog id="routineDialog" class="modal routine-modal">
+    <form method="dialog" id="routineForm">
+      <div class="modal-head"><div><p class="eyebrow">BUILD IT ONCE</p><h3 id="routineDialogTitle">Create routine</h3></div><button type="button" data-close-dialog="routineDialog" aria-label="Cancel">×</button></div>
+      <label>Routine name<input id="routineName" required placeholder="e.g. Upper Body" /></label>
+      <div class="routine-builder-head">
+        <div>
+          <strong>Exercises</strong>
+          <small>Add them in the order you normally do them.</small>
+        </div>
+        <button type="button" id="addRoutineExercise" class="mini-btn">+ Exercise</button>
+      </div>
+      <div id="routineExerciseRows" class="routine-builder-list"></div>
+      <button id="saveRoutineBtn" class="primary-btn" value="default">Save routine</button><button type="button" class="cancel-btn" data-close-dialog="routineDialog">Cancel</button>
+    </form>
+  </dialog>
+
+  <dialog id="workoutDialog" class="workout-modal">
+    <div class="live-workout-shell">
+      <div class="live-workout-top">
+        <div>
+          <p class="eyebrow">LIVE WORKOUT</p>
+          <h2 id="liveWorkoutTitle">Workout</h2>
+          <span id="liveWorkoutClock">00:00</span>
+        </div>
+        <button id="minimiseWorkoutBtn" class="profile-pill" aria-label="Minimise workout">—</button>
+      </div>
+
+      <div id="workoutProgress" class="guided-progress"></div>
+      <div id="liveExerciseList" class="live-exercise-list"></div>
+
+      <button id="cancelWorkoutBtn" class="cancel-workout-btn">Cancel workout</button>
+    </div>
+  </dialog>
+
+
+  <dialog id="exerciseCompleteDialog" class="modal exercise-complete-modal celebration">
+    <div class="ecm-scene" aria-hidden="true"><div class="ecm-stars" id="ecmStars"></div></div>
+    <div class="ecm-content">
+      <div class="ecm-icon-badge" id="ecmIconBadge"><span id="ecmIcon">💪</span></div>
+      <div id="ecmPrBadges" class="pr-badges"></div>
+      <p class="eyebrow" id="exerciseCompleteEyebrow">EXERCISE COMPLETE</p>
+      <h2 id="exerciseCompleteTitle">Brilliant work!</h2>
+      <p id="exerciseCompleteMessage"></p>
+      <div id="exerciseCompleteStats" class="exercise-complete-stats"></div>
+      <button id="nextExerciseBtn" class="primary-btn">Next exercise</button>
+    </div>
+  </dialog>
+
+  <dialog id="finishFeelingDialog" class="modal workout-celebration celebration premium-workout-result">
+    <div id="confettiBurst" class="confetti-burst" aria-hidden="true"></div>
+    <div class="premium-star" aria-hidden="true">★</div>
+    <p class="eyebrow premium-complete-label">WORKOUT COMPLETE</p>
+    <h2 id="finishFeelingTitle">Amazing work!</h2>
+    <p id="finishWorkoutSummary" class="workout-celebration-message premium-subtitle"></p>
+
+    <div class="premium-athlete premium-athlete-image" aria-hidden="true">
+      <img src="workout-victory-silhouette.png?v=165" alt="" />
+    </div>
+
+    <div class="workout-result-grid premium-result-grid">
+      <div class="premium-stat-card">
+        <div class="premium-stat-icon">🏋️</div>
+        <span>TOTAL WEIGHT LIFTED</span>
+        <strong id="finishTotalWeight">0 kg</strong>
+        <small>That's serious strength! 💪</small>
+      </div>
+      <div class="premium-stat-card">
+        <div class="premium-stat-icon">◷</div>
+        <span>WORKOUT DURATION</span>
+        <strong id="finishWorkoutDuration">0 min</strong>
+        <small>Great focus and dedication! ⭐</small>
+      </div>
+    </div>
+
+    <div class="premium-motivation"><b>♡</b><span>Every rep brings you closer to<br><strong>a stronger, healthier you.</strong> ✨</span></div>
+
+    <div class="premium-feeling-panel">
+      <label>How did the workout feel?</label>
+      <div class="feeling-row finish-feeling-row">
+        <button type="button" data-finish-feel="1">😣</button>
+        <button type="button" data-finish-feel="2">😕</button>
+        <button type="button" data-finish-feel="3" class="selected">😐</button>
+        <button type="button" data-finish-feel="4">🙂</button>
+        <button type="button" data-finish-feel="5">😄</button>
+      </div>
+    </div>
+    <button id="saveFinishedWorkout" class="premium-done-btn"><span>🎉</span><b>Done!</b><small>Save workout</small></button>
+    <button id="shareWorkoutBtn" type="button" class="checkout-share-btn">Share achievement</button>
+  </dialog>
+
+  
+  <dialog id="barcodeDialog" class="scanner-modal">
+    <div class="scanner-shell">
+      <div class="scanner-head">
+        <div>
+          <p class="eyebrow">OPEN FOOD FACTS</p>
+          <h2>Scan barcode</h2>
+        </div>
+        <button type="button" id="closeScannerBtn" class="profile-pill" aria-label="Close scanner">×</button>
+      </div>
+
+      <div id="scannerReader" class="scanner-reader"></div>
+
+      <div class="scanner-guide">
+        <strong>Line up the barcode</strong>
+        <span>Hold the pack steady and keep the barcode inside the frame.</span>
+      </div>
+
+      <div id="scannerStatus" class="scanner-status">Camera will start when you open this screen.</div>
+
+      <div class="manual-barcode">
+        <span>Camera not cooperating?</span>
+        <div class="manual-barcode-row">
+          <input id="manualBarcodeInput" inputmode="numeric" autocomplete="off" placeholder="Enter barcode number" />
+          <button type="button" id="manualLookupBtn" class="secondary-btn">Look up</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="productDialog" class="modal product-modal">
+    <div class="modal-head">
+      <div>
+        <p class="eyebrow">PRODUCT FOUND</p>
+        <h3 id="productName">Product</h3>
+      </div>
+      <button type="button" data-close-dialog="productDialog" aria-label="Cancel">×</button>
+    </div>
+
+    <div class="product-top">
+      <img id="productImage" class="product-image hidden" alt="" />
+      <div class="product-meta">
+        <span id="productBrand"></span>
+        <small id="productBarcode"></small>
+      </div>
+    </div>
+
+    <div id="productWarning" class="product-warning hidden"></div>
+
+    <div class="nutrition-highlight">
+      <span>Saturated fat</span>
+      <strong id="productSat100">—</strong>
+      <small>per 100g</small>
+    </div>
+
+    <form id="productAddForm">
+      <label>Meal
+        <select id="productMeal" required>
+          <option value="" selected disabled>Choose meal</option>
+          <option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snack</option>
+        </select>
+      </label>
+
+      <label>How much did you have?
+        <div class="amount-row">
+          <input id="productAmount" type="number" min="0.1" step="0.1" value="100" required />
+          <select id="productAmountUnit">
+            <option value="g">grams</option>
+            <option value="serving">serving(s)</option>
+          </select>
+        </div>
+      </label>
+
+      <div id="servingInfo" class="serving-info hidden"></div>
+
+      <div class="calculated-sat-card">
+        <span>This adds approximately</span>
+        <strong><span id="calculatedSat">0.0</span>g</strong>
+        <small>saturated fat to today</small>
+      </div>
+
+      <button class="primary-btn" type="submit">Add to today</button>
+      <button type="button" class="cancel-btn" data-close-dialog="productDialog">Cancel</button>
+    </form>
+  </dialog>
+
+  <dialog id="productNotFoundDialog" class="modal">
+    <div class="modal-head">
+      <div>
+        <p class="eyebrow">NOT FOUND</p>
+        <h3>We couldn't find that product</h3>
+      </div>
+      <button type="button" data-close-dialog="productNotFoundDialog" aria-label="Close">×</button>
+    </div>
+    <p class="modal-note">You can still add the food manually. Open Food Facts is community-maintained, so some products may be missing or have incomplete nutrition data.</p>
+    <button id="manualFoodFromNotFound" type="button" class="primary-btn">Add food manually</button>
+    <button type="button" class="cancel-btn" data-close-dialog="productNotFoundDialog">Cancel</button>
+  </dialog>
+
+
+  
+  <dialog id="checkFoodResultDialog" class="modal check-result-modal">
+    <div class="modal-head">
+      <div>
+        <p class="eyebrow">CHECK FOOD</p>
+        <h3 id="checkFoodName">Product</h3>
+      </div>
+      <button type="button" data-close-dialog="checkFoodResultDialog" aria-label="Close">×</button>
+    </div>
+
+    <div class="check-product-top">
+      <img id="checkFoodImage" class="check-food-image hidden" alt="" />
+      <div id="checkFoodFallback" class="check-food-image check-food-fallback">🍎</div>
+      <div>
+        <strong id="checkFoodBrand"></strong>
+        <small id="checkFoodBarcode"></small>
+      </div>
+    </div>
+
+    <div class="check-portion-row">
+      <label>How much are you considering?
+        <div class="amount-row">
+          <input id="checkFoodAmount" type="number" min="0.1" step="0.1" value="100" />
+          <select id="checkFoodUnit">
+            <option value="g">grams</option>
+            <option value="serving">serving(s)</option>
+          </select>
+        </div>
+      </label>
+    </div>
+
+    <div class="impact-card" id="impactCard">
+      <span id="impactHeadline">Checking impact…</span>
+      <strong id="impactSat">0.0g</strong>
+      <small id="impactDetail"></small>
+    </div>
+
+    <div class="impact-stats">
+      <div><span>Remaining now</span><strong id="impactRemainingNow">—</strong></div>
+      <div><span>After this food</span><strong id="impactRemainingAfter">—</strong></div>
+      <div><span>Projected score</span><strong id="impactProjectedScore">—</strong></div>
+    </div>
+
+    <div class="check-message" id="checkMessage"></div>
+
+    <button id="addCheckedFoodBtn" type="button" class="primary-btn">Add this food</button>
+    <button type="button" class="cancel-btn" data-close-dialog="checkFoodResultDialog">Just checking</button>
+  </dialog>
+
+<dialog id="foodDetailDialog" class="modal food-detail-modal">
+    <div class="modal-head">
+      <div>
+        <p class="eyebrow">FOOD RECORD</p>
+        <h3 id="detailFoodName">Food</h3>
+      </div>
+      <button type="button" data-close-dialog="foodDetailDialog" aria-label="Close">×</button>
+    </div>
+
+    <div class="detail-food-hero">
+      <img id="detailFoodImage" class="detail-food-image hidden" alt="" />
+      <div id="detailFoodFallback" class="detail-food-image detail-food-fallback">🍎</div>
+      <div>
+        <strong id="detailFoodBrand"></strong>
+        <small id="detailFoodBarcode"></small>
+      </div>
+    </div>
+
+    <div class="detail-grid">
+      <div><span>Meal</span><strong id="detailFoodMeal">—</strong></div>
+      <div><span>Saturated fat</span><strong id="detailFoodSat">—</strong></div>
+      <div><span>Protein</span><strong id="detailFoodProtein">—</strong></div>
+      <div><span>Amount eaten</span><strong id="detailFoodAmount">—</strong></div>
+      <div><span>Source</span><strong id="detailFoodSource">—</strong></div>
+    </div>
+
+    <button id="deleteFoodBtn" type="button" class="danger-btn">Delete food entry</button>
+    <button type="button" class="cancel-btn" data-close-dialog="foodDetailDialog">Close</button>
+  </dialog>
+
+<dialog id="checkoutDialog" class="modal celebration checkout-premium">
+    <div class="checkout-scene" aria-hidden="true"><div class="checkout-stars" id="checkoutStars"></div></div>
+    <svg width="0" height="0" style="position:absolute">
+      <defs>
+        <linearGradient id="checkoutGradGreen" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#55f0a7"/><stop offset="100%" stop-color="#a9f7d1"/></linearGradient>
+        <linearGradient id="checkoutGradCyan" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#54d9ff"/><stop offset="100%" stop-color="#a6ecff"/></linearGradient>
+        <linearGradient id="checkoutGradViolet" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#a879ff"/><stop offset="100%" stop-color="#d9c2ff"/></linearGradient>
+      </defs>
+    </svg>
+    <div class="checkout-content">
+      <div class="checkout-text-panel">
+        <div class="checkout-eyebrow">TODAY'S CHECKOUT</div>
+        <h2 id="checkoutTitle">Nice work!</h2>
+        <p id="checkoutText"></p>
+        <div id="checkoutRewardNote" class="checkout-reward-note hidden"></div>
+      </div>
+
+      <div class="checkout-rings">
+        <div class="checkout-ring-card">
+          <div class="checkout-ring-wrap">
+            <svg viewBox="0 0 92 92">
+              <circle class="checkout-ring-track" cx="46" cy="46" r="38"/>
+              <circle class="checkout-ring-fill" id="checkoutRingSat" stroke="url(#checkoutGradGreen)" cx="46" cy="46" r="38" stroke-dasharray="238.76" stroke-dashoffset="238.76"/>
+            </svg>
+            <div class="checkout-ring-num" id="checkoutRingSatNum">0.0<small>g</small></div>
+            <div class="checkout-check-badge" id="checkoutBadgeSat"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12.5L9.5 18L20 6" stroke="#06110c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          </div>
+          <div class="checkout-ring-label">Sat fat</div>
+        </div>
+        <div class="checkout-ring-card">
+          <div class="checkout-ring-wrap">
+            <svg viewBox="0 0 92 92">
+              <circle class="checkout-ring-track" cx="46" cy="46" r="38"/>
+              <circle class="checkout-ring-fill" id="checkoutRingMins" stroke="url(#checkoutGradCyan)" cx="46" cy="46" r="38" stroke-dasharray="238.76" stroke-dashoffset="238.76"/>
+            </svg>
+            <div class="checkout-ring-num" id="checkoutRingMinsNum">0<small>min</small></div>
+            <div class="checkout-check-badge" id="checkoutBadgeMins"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12.5L9.5 18L20 6" stroke="#06110c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          </div>
+          <div class="checkout-ring-label">Minutes</div>
+        </div>
+        <div class="checkout-ring-card">
+          <div class="checkout-ring-wrap">
+            <svg viewBox="0 0 92 92">
+              <circle class="checkout-ring-track" cx="46" cy="46" r="38"/>
+              <circle class="checkout-ring-fill" id="checkoutRingScore" stroke="url(#checkoutGradViolet)" cx="46" cy="46" r="38" stroke-dasharray="238.76" stroke-dashoffset="238.76"/>
+            </svg>
+            <div class="checkout-ring-num" id="checkoutRingScoreNum">0</div>
+            <div class="checkout-check-badge" id="checkoutBadgeScore"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12.5L9.5 18L20 6" stroke="#06110c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          </div>
+          <div class="checkout-ring-label">Score</div>
+        </div>
+      </div>
+
+      <button id="closeCheckout" class="primary-btn">Awesome, thanks!</button>
+      <button id="shareCheckout" type="button" class="checkout-share-btn">Share achievement</button>
+    </div>
+  </dialog>
+
+  <dialog id="rewardBankDialog" class="modal reward-bank-modal">
+    <div class="modal-head"><div><p class="eyebrow">REWARD BANK</p><h3>Your points</h3></div><button type="button" data-close-dialog="rewardBankDialog" aria-label="Close">×</button></div>
+
+    <div class="balance-row">
+      <strong id="rbBalance">0</strong>
+      <small>points banked, never expire</small>
+    </div>
+
+    <div class="today-earn-row hidden" id="rbTodayRow">
+      <span id="rbTodayLabel"></span>
+      <strong id="rbTodayValue"></strong>
+    </div>
+
+    <div id="rbGoalView" class="hidden">
+      <div class="goal-card">
+        <div class="goal-card-head"><strong id="rbGoalTitle"></strong><span id="rbGoalFraction"></span></div>
+        <div class="goal-bar-track"><div class="goal-bar-fill" id="rbGoalBarFill"></div></div>
+        <p class="goal-note" id="rbGoalNote"></p>
+      </div>
+      <button type="button" class="cashout-btn" id="rbCashoutBtn">Cash out</button>
+      <button type="button" class="clear-goal-link" id="rbClearGoalBtn">Change or clear this goal</button>
+    </div>
+
+    <form id="rbGoalForm" class="goal-form hidden">
+      <p class="modal-note">Set something to work toward — 1 point for every gram you finish under target that day.</p>
+      <label>Icon</label>
+      <div class="icon-picker" id="rbIconPicker">
+        <button type="button" class="icon-picker-trigger" id="rbIconTrigger">
+          <span class="current-icon" id="rbCurrentIconEmoji">🎁</span>
+          <span class="current-label" id="rbCurrentIconLabel">Something nice</span>
+          <span class="chevron">▾</span>
+        </button>
+        <div class="icon-picker-panel"><div class="icon-picker-panel-inner" id="rbIconGrid"></div></div>
+      </div>
+      <label>What are you working toward?</label>
+      <input id="rbGoalName" placeholder="e.g. New plant, a book, a lazy Sunday" required />
+      <label>How many points?</label>
+      <input id="rbGoalTarget" type="number" min="1" placeholder="e.g. 15" required />
+      <button type="submit" class="goal-save-btn">Set this goal</button>
+    </form>
+  </dialog>
+
+  <dialog id="scoreInfoDialog" class="modal">
+    <div class="modal-head"><div><p class="eyebrow">CHOLSCORE</p><h3>What the labels mean</h3></div><button type="button" data-close-dialog="scoreInfoDialog" aria-label="Close">×</button></div>
+    <p class="modal-note">Your daily score, and what it's called at each level.</p>
+    <div id="scoreBandList" class="score-band-list"></div>
+  </dialog>
+
+  <dialog id="settingsDialog" class="modal">
+    <form method="dialog">
+      <div class="modal-head"><h3>Profile</h3><button type="button" data-close-dialog="settingsDialog" aria-label="Cancel">×</button></div>
+      <div class="settings-photo-row">
+        <button type="button" id="settingsAvatarPreview" class="profile-avatar" aria-label="Profile photo"></button>
+        <button type="button" id="settingsChangePhotoBtn" class="secondary-btn">Add photo</button>
+      </div>
+      <input id="settingsPhotoFile" type="file" accept="image/*" class="hidden" />
+      <label>Name<input id="settingsName" /></label>
+      <label>Daily saturated-fat target (g)<input id="settingsTarget" type="number" min="1" max="100" step="0.1" /></label>
+      <label>Distance units
+        <select id="settingsUnits">
+          <option value="mi">Miles</option>
+          <option value="km">Kilometres</option>
+        </select>
+      </label>
+      <button id="saveSettings" class="primary-btn" value="default">Save changes</button><button type="button" class="cancel-btn" data-close-dialog="settingsDialog">Cancel</button>
+
+      <p class="eyebrow" style="margin-top:22px">BACKUP &amp; RESTORE</p>
+      <p id="backupStatus" class="modal-note">You haven't backed up yet.</p>
+      <p class="modal-note">Export gives you a file — it only protects you if it ends up somewhere other than this phone: a cloud drive, email, or another device.</p>
+      <button id="exportBackupBtn" type="button" class="secondary-btn backup-btn">⬇ Export backup</button>
+      <button id="importBackupBtn" type="button" class="secondary-btn backup-btn">⬆ Restore from backup</button>
+      <input id="importBackupFile" type="file" accept="application/json,.json" class="hidden" />
+
+      <p class="eyebrow" style="margin-top:22px">VACATION MODE</p>
+      <p class="modal-note">Pausing protects your streak from breaking while you're genuinely away or unwell — but paused days don't count toward it either, so you'll naturally make up the time once you're back. No limit on how often you use this.</p>
+      <div id="vacationModeOffView">
+        <label>Started
+          <select id="vacationBackdateSelect">
+            <option value="0">Today</option>
+            <option value="1">Yesterday</option>
+            <option value="2">2 days ago</option>
+            <option value="3">3 days ago</option>
+            <option value="4">4 days ago</option>
+            <option value="5">5 days ago</option>
+            <option value="6">6 days ago</option>
+            <option value="7">7 days ago</option>
+          </select>
+        </label>
+        <button id="vacationModeOnBtn" type="button" class="secondary-btn">Turn on Vacation Mode</button>
+      </div>
+      <div id="vacationModeOnView" class="hidden">
+        <p class="modal-note">Vacation Mode is active — paused since <strong id="vacationModeSinceText"></strong>.</p>
+        <button id="vacationModeOffBtn" type="button" class="secondary-btn">Turn off Vacation Mode</button>
+      </div>
+
+      <button id="resetData" type="button" class="danger-btn">Reset CholScore data</button>
+    </form>
+  </dialog>
+
+  <dialog id="dayReportDialog" class="day-report-dialog">
+    <button id="dayReportClose" class="rep-close" aria-label="Close report">✕</button>
+    <div id="dayReportInner" class="report-inner"></div>
+  </dialog>
+
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="app.js?v=165"></script>
+
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js").then(reg => {
+          reg.update().catch(() => {});
+        }).catch(() => {});
+      });
+    }
+  </script>
+
+</body>
+</html>
