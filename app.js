@@ -1,7 +1,7 @@
 
 const STORAGE_KEY = "cholscore_v02";
 const LEGACY_KEY = "cholscore_v01";
-const APP_VERSION = "166"; // bump alongside every other ?v= reference on each deploy — used to cache-bust dynamically-loaded assets like the share templates below, which don't go through index.html's own ?v= query strings
+const APP_VERSION = "167"; // bump alongside every other ?v= reference on each deploy — used to cache-bust dynamically-loaded assets like the share templates below, which don't go through index.html's own ?v= query strings
 /* Always use this instead of date.toISOString().slice(0,10) for turning a
    Date into a "YYYY-MM-DD" key. toISOString() converts to UTC first, which
    silently shifts the date by a day for anyone in a positive UTC offset
@@ -277,6 +277,7 @@ function renderToday(){
   $("satUsed").textContent=`${fmt(t.sat)}g`;$("satRemaining").textContent=`${fmt(Math.max(0,target-t.sat))}g`;
   $("moveMinutes").textContent=fmtInt(t.mins);$("activityCount").textContent=t.activities;
   $("dailyScore").textContent=score;$("scoreLabel").textContent=scoreLabel(score);
+  if($("dailyScoreRing")) $("dailyScoreRing").textContent=score;
   $("satRing").style.setProperty("--pct",Math.min(100,t.sat/target*100));
   $("moveRing").style.setProperty("--pct",Math.min(100,t.mins/45*100));
   $("scoreRing").style.setProperty("--pct",score);

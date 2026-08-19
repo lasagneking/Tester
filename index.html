@@ -26,7 +26,7 @@
        moment the page itself is loading; the splash covers the moment
        before that, while iOS is launching the app shell. -->
   <style>html,body{background:#090b10}</style>
-  <link rel="stylesheet" href="styles.css?v=166" />
+  <link rel="stylesheet" href="styles.css?v=167" />
 
   <!-- v1.9.0 iOS splash screens. Unlike Android, iOS still doesn't generate
        one from the manifest — it needs an exact pixel-matched PNG per
@@ -49,6 +49,14 @@
   <link rel="apple-touch-startup-image" href="https://lasagneking.github.io/splash/apple-splash-1320x2868.png" media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3)" />
 </head>
 <body>
+
+  <!-- Floating ambient orbs — pure decoration, pointer-events none -->
+  <div class="ambient" aria-hidden="true">
+    <span class="orb orb-a"></span>
+    <span class="orb orb-b"></span>
+    <span class="orb orb-c"></span>
+    <span class="orb orb-d"></span>
+  </div>
   <div id="app">
     <section id="onboarding" class="screen onboarding hidden">
       <div class="brand-orb">C</div>
@@ -108,14 +116,24 @@
         <button id="profileBtn" class="profile-avatar" aria-label="Profile"></button>
       </header>
 
-      <section id="todayView" class="view active">
-        <div class="hero-card">
+      <section id="todayView" class="view active dash-view">
+        <!-- Pro dashboard hero -->
+        <div class="hero-card dash-hero">
           <button type="button" id="scoreInfoBtn" class="hero-info-btn" aria-label="What do these score labels mean?">ⓘ</button>
-          <div>
-            <p id="heroMessage" class="hero-message">You're building a better day.</p>
-            <h3>Today's progress</h3>
+          <div class="dash-hero-top">
+            <div class="dash-score-block">
+              <p class="dash-score-eyebrow">TODAY'S SCORE</p>
+              <div class="dash-score-row">
+                <strong id="dailyScore" class="dash-score-num">0</strong>
+                <span class="dash-score-max">/100</span>
+              </div>
+              <p id="scoreLabel" class="dash-score-label">Getting started</p>
+            </div>
+            <div class="dash-hero-copy">
+              <p id="heroMessage" class="hero-message">You're building a better day.</p>
+            </div>
           </div>
-          <div class="rings-wrap">
+          <div class="rings-wrap dash-rings">
             <div class="ring-card">
               <div id="satRing" class="progress-ring" style="--pct:0">
                 <div class="ring-inner">
@@ -123,9 +141,8 @@
                   <span>sat fat</span>
                 </div>
               </div>
-              <p><span id="satRemaining">0.0g</span> remaining</p>
+              <p><span id="satRemaining">0.0g</span> left</p>
             </div>
-
             <div class="ring-card">
               <div id="moveRing" class="progress-ring move" style="--pct:0">
                 <div class="ring-inner">
@@ -135,30 +152,41 @@
               </div>
               <p><span id="activityCount">0</span> activities</p>
             </div>
-
-            <div class="ring-card">
+            <div class="ring-card ring-card-score">
               <div id="scoreRing" class="progress-ring score" style="--pct:0">
                 <div class="ring-inner">
-                  <strong id="dailyScore">0</strong>
+                  <strong id="dailyScoreRing">0</strong>
                   <span>score</span>
                 </div>
               </div>
-              <p><span id="scoreLabel">Getting started</span></p>
+              <p>CholScore</p>
             </div>
           </div>
         </div>
 
-        
-        <button id="checkFoodBtn" class="check-food-card">
-          <div class="check-food-icon">⌁</div>
-          <div>
-            <strong>Check food</strong>
-            <span>Scan something before you decide</span>
+        <!-- Action grid -->
+        <div class="dash-actions">
+          <button id="checkFoodBtn" class="check-food-card dash-action">
+            <div class="check-food-icon">⌁</div>
+            <div>
+              <strong>Check food</strong>
+              <span>Scan before you decide</span>
+            </div>
+            <b>›</b>
+          </button>
+          <div class="weekly-bank-card dash-action" id="rewardBankCard" role="button" tabindex="0">
+            <div class="bank-icon">🏦</div>
+            <div class="bank-copy">
+              <span>REWARD BANK</span>
+              <strong><span id="bankPoints">0</span> pts</strong>
+              <small id="bankGoalText">Tap to set a goal</small>
+              <div class="bank-goal-bar hidden" id="bankGoalBar"><i id="bankGoalBarFill"></i></div>
+            </div>
+            <div class="bank-badge" id="bankBadge">View</div>
           </div>
-          <b>›</b>
-        </button>
+        </div>
 
-<section class="section-block">
+        <section class="section-block dash-timeline">
           <div class="section-title">
             <h3>Today's timeline</h3>
             <span id="timelineCount">0 items</span>
@@ -166,19 +194,7 @@
           <div id="timeline" class="timeline empty-state">Nothing logged yet. Your first win starts here.</div>
         </section>
 
-        
-        <div class="weekly-bank-card" id="rewardBankCard" role="button" tabindex="0">
-          <div class="bank-icon">🏦</div>
-          <div class="bank-copy">
-            <span>REWARD BANK</span>
-            <strong><span id="bankPoints">0</span> points</strong>
-            <small id="bankGoalText">Tap to set a goal</small>
-            <div class="bank-goal-bar hidden" id="bankGoalBar"><i id="bankGoalBarFill"></i></div>
-          </div>
-          <div class="bank-badge" id="bankBadge">Tap to view</div>
-        </div>
-
-<button id="checkoutBtn" class="checkout-btn">🌙 Check out for today</button>
+        <button id="checkoutBtn" class="checkout-btn dash-checkout">🌙 Check out for today</button>
       </section>
 
       <section id="foodView" class="view">
@@ -510,7 +526,7 @@
     <p id="finishWorkoutSummary" class="workout-celebration-message premium-subtitle"></p>
 
     <div class="premium-athlete premium-athlete-image" aria-hidden="true">
-      <img src="workout-victory-silhouette.png?v=166" alt="" />
+      <img src="workout-victory-silhouette.png?v=167" alt="" />
     </div>
 
     <div class="workout-result-grid premium-result-grid">
@@ -886,7 +902,7 @@
   </dialog>
 
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <script src="app.js?v=166"></script>
+  <script src="app.js?v=167"></script>
 
   <script>
     if ("serviceWorker" in navigator) {
