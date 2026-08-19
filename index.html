@@ -26,7 +26,7 @@
        moment the page itself is loading; the splash covers the moment
        before that, while iOS is launching the app shell. -->
   <style>html,body{background:#090b10}</style>
-  <link rel="stylesheet" href="styles.css?v=167" />
+  <link rel="stylesheet" href="styles.css?v=168" />
 
   <!-- v1.9.0 iOS splash screens. Unlike Android, iOS still doesn't generate
        one from the manifest — it needs an exact pixel-matched PNG per
@@ -404,11 +404,11 @@
       </section>
 
       <nav class="bottom-nav">
-        <button class="nav-btn active" data-view="todayView"><span>◉</span><small>Today</small></button>
-        <button class="nav-btn" data-view="foodView"><span>⌁</span><small>Food</small></button>
-        <button class="nav-btn" data-view="exerciseView"><span>↗</span><small>Exercise</small></button>
-        <button class="nav-btn" data-view="rewardsView"><span>★</span><small>Rewards</small></button>
-        <button class="nav-btn" data-view="historyView"><span>▦</span><small>History</small></button>
+        <button class="nav-btn active" data-view="todayView"><span class="nav-ico" aria-hidden="true">◉</span><small>Today</small></button>
+        <button class="nav-btn" data-view="foodView"><span class="nav-ico" aria-hidden="true">⌁</span><small>Food</small></button>
+        <button class="nav-btn" data-view="exerciseView"><span class="nav-ico" aria-hidden="true">↗</span><small>Exercise</small></button>
+        <button class="nav-btn" data-view="rewardsView"><span class="nav-ico" aria-hidden="true">★</span><small>Rewards</small></button>
+        <button class="nav-btn" data-view="historyView"><span class="nav-ico" aria-hidden="true">▦</span><small>History</small></button>
       </nav>
     </main>
   </div>
@@ -526,7 +526,7 @@
     <p id="finishWorkoutSummary" class="workout-celebration-message premium-subtitle"></p>
 
     <div class="premium-athlete premium-athlete-image" aria-hidden="true">
-      <img src="workout-victory-silhouette.png?v=167" alt="" />
+      <img src="workout-victory-silhouette.png?v=168" alt="" />
     </div>
 
     <div class="workout-result-grid premium-result-grid">
@@ -902,7 +902,7 @@
   </dialog>
 
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <script src="app.js?v=167"></script>
+  <script src="app.js?v=168"></script>
 
   <script>
     if ("serviceWorker" in navigator) {
